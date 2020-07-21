@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "Game.h"
 #include "GameView.h"
@@ -20,10 +21,17 @@
 #include "Places.h"
 // add your own #includes here
 
-// TODO: ADD YOUR OWN STRUCTS HERE
+
+struct node {
+	int health;		// health of a given player
+	char *locHist;	// Array of all the location history of a player 
+};
+
 
 struct gameView {
-	// TODO: ADD FIELDS HERE
+	Link	*infoPlayer;	// array storing pointer to a node
+	Map graph;
+	Round numRound;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -31,20 +39,17 @@ struct gameView {
 
 GameView GvNew(char *pastPlays, Message messages[])
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	GameView new = malloc(sizeof(*new));
-	if (new == NULL) {
+	GameView gv = malloc(sizeof(*gv));
+	if (gv == NULL) {
 		fprintf(stderr, "Couldn't allocate GameView!\n");
 		exit(EXIT_FAILURE);
 	}
-
-	return new;
+	
+	return gv;
 }
 
 void GvFree(GameView gv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	free(gv);
 }
 
 ////////////////////////////////////////////////////////////////////////
