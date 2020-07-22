@@ -27,7 +27,7 @@
 // global declarations
 char abbre[ABBREVIATION_SIZE];
 char move[MOVE_SIZE];
-char 	*locVamp;		// location of vampire. Should be freed after use
+PlaceId locVamp;		// location of vampire. Should be freed after use
 char 	*traps;			// location of all active traps. Dynamic
 
 // Static Function Declarations
@@ -35,19 +35,29 @@ static void setGameView(GameView, char *);
 static void set_abbreviation(char *, char *);
 static void reset_move_abbreviation(char *, char *);
 static void set_playerInfo(GameView, char *, char *);
+static void restoreHHealth(GameView, int);
+static void restHunterspts(GameView, int);
+static void HunterEncounter(GameView, int, char *);
+static void VampireMatures(GameView);
 
 // add your own #includes here
 
 
-struct node {
+struct node_hunters {
 	int health;		// health of a given player
 	PlaceId *placeHist;	// Array of all the location history of a player 
-} Node;
+};
+
+struct node_dracula {
+	int bloodpts;		// health of a given player
+	PlaceId *placeHist;	// Array of all the location history of a player 
+};
 
 
 struct gameView {
 	Map graph;
-	struct node players[NUM_PLAYERS];	// array storing pointer to a node
+	struct node_hunters hunters[NUM_PLAYERS];	// array storing pointer to hunters node
+	struct node_dracula dracula;				// array storing pointer to dracula node	
 	Round numRound;
 	int GameScore;
 };
@@ -69,86 +79,185 @@ void reset_move_abbreviation(char *move, char *abbre)
 }
 
 static
+void restoreHHealth(GameView gv, int HunterIndex)
+{
+	assert(gv != NULL);
+	gv->hunters[HunterIndex].health = GAME_START_HUNTER_LIFE_POINTS;
+}
+
+static
+void restHunterspts(GameView gv, int HunterIndex)
+{
+	assert(gv != NULL);
+	gv->hunters[HunterIndex].health = gv->hunters[HunterIndex].health > 5? GAME_START_HUNTER_LIFE_POINTS: gv->hunters[HunterIndex].health + LIFE_GAIN_REST;
+}
+
+static
+void HunterEncounter(GameView gv, int HunterIndex, char *move)
+{
+	for(int i = 3; i < MOVE_SIZE - 1; i++) {
+		if(move[i] == 'V')
+			locVamp = NOWHERE;
+		else if(move[i] == 'T') {
+			// Remember to destroy trap (DO LATER PLS)
+			gv->hunters[HunterIndex].health = gv->hunters[HunterIndex].health < 3? 0: gv->hunters[HunterIndex].health - LIFE_LOSS_TRAP_ENCOUNTER;
+			// If health == 0 cant do anything, hence break out of loop			
+			if(gv->hunters[HunterIndex].health == 0) {
+				gv->GameScore -= 6;				
+				break;
+			}
+		}
+		else if(move[i] == 'D') {
+			gv->hunters[HunterIndex].health = gv->hunters[HunterIndex].health < 5? 0: gv->hunters[HunterIndex].health - LIFE_LOSS_DRACULA_ENCOUNTER;
+			// Draculae health also reduces by 10
+			gv->dracula.bloodpts = gv->dracula.bloodpts < 11? 0: gv->dracula.bloodpts - LIFE_LOSS_DRACULA_ENCOUNTER;
+			// If health == 0 cant do anything or bloodpts == 0 gameover, so break out in both cases				
+			if(gv->hunters[HunterIndex].health == 0) {
+				gv->GameScore -= 6;				
+				break;
+			}
+			else if(gv->dracula.bloodpts == 0)
+				break;
+		}		
+	}
+}
+
+static
+void VampireMatures(GameView gv)
+{
+	assert(gv != NULL);
+	gv->GameScore -= 13;
+	locVamp = NOWHERE;
+}
+
+static
 void set_playerInfo(GameView gv, char *move, char *abbre)
 {
 	switch(move[0]) {
+
 	case 'G':
 		// if starting at hospital increase health to full
-		if(gv->players[0].health == 0)
-			gv->players[0].health = GAME_START_HUNTER_LIFE_POINTS;
-		gv->players[0].placeHist[gv->numRound] = placeAbbrevToId(abbre);
-		// if rests then health +3 but not >9
-		if(gv->players[0].placeHist[gv->numRound - 1] == gv->players[0].placeHist[gv->numRound])
-			gv->players[0].health = gv->players[0].health > 5? GAME_START_HUNTER_LIFE_POINTS: gv->players[0].health + LIFE_GAIN_REST;
+		if(gv->hunters[0].health == 0)
+			restoreHHealth(gv, 0);
 		
-		// look at move[3] .. move[6]
-		// encounter V T D and health points reduction
-		// if V then locVamp == NULL
-		for(int i = 3; i < MOVE_SIZE - 1; i++) {
-			if(move[i] == 'V')
-				locVamp = NULL;
-			if(move[i] == 'T') {
-				// Remember to destroy trap
-				gv->players[0].health = gv->players[0].health < 3? 0: gv->players[0].health - LIFE_LOSS_TRAP_ENCOUNTER;
-				break;
-			}
-			if(move[i] == 'D') {
-				gv->players[0].health = gv->players[0].health < 5? 0: gv->players[0].health - LIFE_LOSS_DRACULA_ENCOUNTER;
-				// Draculae health also reduces by 10
-				gv->players[4].health = gv->players[4].health < 11? 0: gv->players[0].health - LIFE_LOSS_HUNTER_ENCOUNTER;
-			}
-				
-		}
+		// fills the placeHist array	
+		gv->hunters[0].placeHist[gv->numRound] = placeAbbrevToId(abbre);
+		
+		// if rests then health +3 but not >9
+		if(gv->hunters[0].placeHist[gv->numRound - 1] == gv->hunters[0].placeHist[gv->numRound])
+			restHunterspts(gv, 0);
+		
+		// look at move[3] .. move[6] and do workings for all encounters Hunters does.
+		HunterEncounter(gv, 0, move);
 
-		// end of move[6] and round % 6 == 0 and not V and locVamp != NULL then gamescore -13
-		// If health 0 goes to hospital and gamescore -6
-
+		printf("%d ",gv->hunters[0].placeHist[gv->numRound]);
+		//printf("health 0 = %d\n", gv->hunters[0].health);
 		break;
+	
 	case 'S':
-		gv->players[1].placeHist[gv->numRound] = placeAbbrevToId(abbre); 
-		printf("%d\n",gv->players[1].placeHist[0]);
+
+	// if starting at hospital increase health to full
+		if(gv->hunters[1].health == 0)
+			restoreHHealth(gv, 1);
+		
+		// fills the placeHist array	
+		gv->hunters[1].placeHist[gv->numRound] = placeAbbrevToId(abbre);
+		
+		// if rests then health +3 but not >9
+		if(gv->hunters[1].placeHist[gv->numRound - 1] == gv->hunters[1].placeHist[gv->numRound])
+			restHunterspts(gv, 1);
+		
+		// look at move[3] .. move[6] and do workings for all encounters Hunters does.
+		HunterEncounter(gv, 1, move);
+
+		printf("%d ",gv->hunters[1].placeHist[gv->numRound]);
+		//printf("health 1 = %d\n", gv->hunters[1].health);
 		break;
 	case 'H':
-		gv->players[2].placeHist[gv->numRound] = placeAbbrevToId(abbre); 
-		printf("%d\n",gv->players[2].placeHist[0]);
+	// if starting at hospital increase health to full
+		if(gv->hunters[2].health == 0)
+			restoreHHealth(gv, 2);
+		
+		// fills the placeHist array	
+		gv->hunters[2].placeHist[gv->numRound] = placeAbbrevToId(abbre);
+		
+		// if rests then health +3 but not >9
+		if(gv->hunters[2].placeHist[gv->numRound - 1] == gv->hunters[2].placeHist[gv->numRound])
+			restHunterspts(gv, 2);
+		
+		// look at move[3] .. move[6] and do workings for all encounters Hunters does.
+		HunterEncounter(gv, 2, move);
+ 
+		printf("%d ",gv->hunters[2].placeHist[gv->numRound]);
+		//printf("health 2 = %d\n", gv->hunters[2].health);		
 		break;
+
 	case 'M':
-		gv->players[3].placeHist[gv->numRound] = placeAbbrevToId(abbre); 
-		printf("%d\n",gv->players[3].placeHist[0]);
+	// if starting at hospital increase health to full
+		if(gv->hunters[3].health == 0)
+			restoreHHealth(gv, 3);
+		
+		// fills the placeHist array	
+		gv->hunters[3].placeHist[gv->numRound] = placeAbbrevToId(abbre);
+		
+		// if rests then health +3 but not >9
+		if(gv->hunters[3].placeHist[gv->numRound - 1] == gv->hunters[3].placeHist[gv->numRound])
+			restHunterspts(gv, 3);
+		
+		// look at move[3] .. move[6] and do workings for all encounters Hunters does.
+		HunterEncounter(gv, 3, move);
+
+		printf("%d ",gv->hunters[3].placeHist[gv->numRound]);
+		//printf("health 3 = %d\n", gv->hunters[3].health);		
 		break;
-	case 'D':
-		gv->players[4].placeHist[gv->numRound] = placeAbbrevToId(abbre); 
-		printf("%d\n",gv->players[4].placeHist[0]);
+
+	case 'D': ;
+		// If moves to a valid locations just add. Check if loc sea then bloodpts -2. If CD +10.
+		PlaceId p = placeAbbrevToId(abbre);
+		if(placeIsReal(p)) {
+			if(!placeIsSea(p)) {
+				if(p != CASTLE_DRACULA)
+					gv->dracula.placeHist[gv->numRound] = placeAbbrevToId(abbre);
+				else {
+					gv->dracula.placeHist[gv->numRound] = placeAbbrevToId(abbre);
+					gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
+				}
+			}			
+			else {
+				gv->dracula.placeHist[gv->numRound] = placeAbbrevToId(abbre);
+				gv->dracula.bloodpts -= 2;
+			}
+		}
+
+		// Else check where i.e. C? S? HI? Dn? TP? and update. If TP then CD and +10
+		else if(!placeIsReal(p)) {
+			if(p == TELEPORT) {
+				gv->dracula.placeHist[gv->numRound] = placeAbbrevToId(abbre);
+				gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
+			}
+			else if(p >= 100 && p <= 107)
+				gv->dracula.placeHist[gv->numRound] = placeAbbrevToId(abbre);
+		}
+
+		// check for vampire 
+		if(move[4] == 'V')
+			locVamp = gv->dracula.placeHist[gv->numRound];
+
+		// check for trap and add to list trap. DO LATER PLS
+		
+ 
+		//printf("%d\n",gv->dracula.placeHist[0]);
+
+
+		// Vampire matures and flies away if after 6 rounds not vanquished
+		if(move[5] == 'V')
+			VampireMatures(gv);
 
 		// if Draculae means end of round
 		gv->numRound++;
+		gv->GameScore -= SCORE_LOSS_DRACULA_TURN;
 		break;
 	}
-
-	// Break out of switch statement here. Now updates players health
-
-/*
-	if(player == 'G') {		
-		gv->players[0].placeHist[gv->numRound] = placeAbbrevToId(abbre);
-		printf("%d\n", gv->players[0].placeHist[0]);
-	}
-	if(player == 'S') { 		
-		gv->players[1].placeHist[gv->numRound] = placeAbbrevToId(abbre); 
-		printf("%d\n",gv->players[1].placeHist[0]);
-	}
-	if(player == 'H') { 		
-		gv->players[2].placeHist[gv->numRound] = placeAbbrevToId(abbre); 
-		printf("%d\n",gv->players[2].placeHist[0]);
-	}
-	if(player == 'M') { 		
-		gv->players[3].placeHist[gv->numRound] = placeAbbrevToId(abbre); 
-		printf("%d\n",gv->players[3].placeHist[0]);
-	}
-	if(player == 'D') { 		
-		gv->players[4].placeHist[gv->numRound] = placeAbbrevToId(abbre); 
-		printf("%d\n",gv->players[4].placeHist[0]);
-	}
-	*/
 }
 
 void setGameView(GameView gv, char *pastPlays)
@@ -172,8 +281,10 @@ void setGameView(GameView gv, char *pastPlays)
 		j++;
 		if(j == MOVE_SIZE - 1) {			
 			set_abbreviation(move, abbre);
+			//printf("%s ", abbre);
 			// set array of moves of a player
 			set_playerInfo(gv, move, abbre);
+			//printf("%d ", placeAbbrevToId(abbre));
 
 			//printf("%s\n", move);
 			//printf("%s\n", abbre);
@@ -196,13 +307,22 @@ GameView GvNew(char *pastPlays, Message messages[])
 	}
 	gv->graph = MapNew();
 	gv->GameScore = GAME_START_SCORE;
+	gv->numRound = 0;
 	
-	// setting up infoPlayers array
-	for(int i = 0; i < 5; i++) {	
-		gv->players[i].placeHist = malloc(MAX_ROUNDS * sizeof(PlaceId *));
-		gv->players[i].health = GAME_START_HUNTER_LIFE_POINTS;
-		assert(gv->players[i].placeHist != NULL);
+	// setting up hunters array
+	for(int i = 0; i < 4; i++) {	
+		gv->hunters[i].placeHist = malloc(MAX_ROUNDS * sizeof(PlaceId *));
+		gv->hunters[i].health = GAME_START_HUNTER_LIFE_POINTS;
+		assert(gv->hunters[i].placeHist != NULL);
 	}
+	// setting up draculae array
+	gv->dracula.placeHist = malloc(MAX_ROUNDS * sizeof(PlaceId *));
+	gv->dracula.bloodpts = GAME_START_BLOOD_POINTS;
+	assert(gv->dracula.placeHist != NULL);	
+	
+	// Set locVamp
+	locVamp = NOWHERE;
+
 	// Setting traps dynamic array here
 	traps = malloc(TRAIL_SIZE * sizeof(char *));
 
@@ -324,9 +444,25 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 void white_box() {
 	
-	char *pastPlays = "GMN.... SPL.... HAM.... MPA.... DCD.V.. GLV....";
+	char *pastPlays = "GST.... SAO.... HZU.... MBB.... DC?.V..";
 	//setNode(pastPlays);
-	GvNew(pastPlays, NULL);
+	//printf("%d %d %d %d %d %d\n",placeAbbrevToId("MN"), placeAbbrevToId("PL"), placeAbbrevToId("AM"), placeAbbrevToId("PA"), placeAbbrevToId("CD"), placeAbbrevToId("LV"));
+	GameView gv = GvNew(pastPlays, NULL);
+	printf("%d\n", gv->numRound);
+	printf("%d\n", gv->GameScore);
+	printf("%s\n", placeIdToName(gv->hunters[0].placeHist[gv->numRound]));	
+	printf("%s\n", placeIdToName(gv->hunters[1].placeHist[gv->numRound]));
+	printf("%s\n", placeIdToName(gv->hunters[2].placeHist[gv->numRound]));
+	printf("%s\n", placeIdToName(gv->hunters[3].placeHist[gv->numRound]));
+	printf("%s\n", placeIdToName(gv->dracula.placeHist[gv->numRound]));			
+	//printf("%d\n", gv->hunters[0].health);
+	//printf("%d\n", gv->dracula.bloodpts);
+	printf("%s\n", placeIdToName(locVamp));
+	
+
+	//printf("%d", placeAbbrevToId("HI"));
+	//PlaceId p= placeAbbrevToId("HI");
+	//printf("%d\n", p);
 }
 
 ////////////////////////////////////////////////////////////////////////

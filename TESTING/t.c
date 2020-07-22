@@ -35,10 +35,12 @@ int main(void)
 	gv->info[0].place = malloc(100*sizeof(placeId *));
 	gv->info[0].place[0] = AMSTERDAM;
 	
-
+	placeId p = ALICANTE;
+	if(p == 1)
+		printf("YES");
 	//Link s = malloc(sizeof(struct node));
 	//s->info = malloc(5 * sizeof(Exam));	
 	//s->info[0]->d = 1; 
-	printf("%d", gv->info[0].place[0]);
+	//printf("%d", gv->info[0].place[0]);
 	return 0;
 }
