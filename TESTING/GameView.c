@@ -370,7 +370,7 @@ GameView GvNew(char *pastPlays, Message messages[])
 	// Setting all the Past moves to NoWhere initially
 	for(i = 0; i < NUM_PLAYERS; i++) {
 		for(int j = 0; j < MAX_ROUNDS; j++)
-			PlayersPlaceHist[i][j] = -2;
+			PlayersPlaceHist[i][j] = NOWHERE;
 	}
 	// Set locVamp
 	gv->dracula.locVamp = NOWHERE;
@@ -416,7 +416,13 @@ int GvGetHealth(GameView gv, Player player)
 
 PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	assert(gv != NULL);
+
+	if(PlayersPlaceHist[player][gv->numRound] != NOWHERE)
+		return PlayersPlaceHist[player][gv->numRound];
+	else if((gv->numRound - 1) >= 0)
+		return PlayersPlaceHist[player][gv->numRound - 1];
+	
 	return NOWHERE;
 }
 
@@ -426,12 +432,30 @@ PlaceId GvGetVampireLocation(GameView gv)
 	return gv->dracula.locVamp;
 }
 
+PlaceId *trap;
 // trap global variable passed here
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
-{
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numTraps = 0;
-	return NULL;
+{	
+	trap = malloc(sizeof(PlaceId) * TRAIL_SIZE);
+	int counter = 0;
+	// if gv->dracula.locVamp != NOWHERE then remove from ntrails
+	int vampInTrail;
+	if(gv->dracula.locVamp != NOWHERE)
+		vampInTrail = 1;
+	else
+		vampInTrail = 0;
+
+	for(int i = 0; i < gv->dracula.ntrail; i++) {
+		if(vampInTrail && gv->dracula.trail[i] == gv->dracula.locVamp) {
+			vampInTrail = 0;
+			continue;
+		}
+		trap[counter] = gv->dracula.trail[i];
+		counter++;
+	}
+
+	*numTraps = counter;
+	return trap;
 }
 
 ////////////////////////////////////////////////////////////////////////
