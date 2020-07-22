@@ -94,12 +94,52 @@ void restHunterspts(GameView gv, int HunterIndex)
 }
 
 static
-void draculaRealPlace(GameView gv, PlaceId, char *)
+void draculaRealPlace(GameView gv, PlaceId p, char *abbre)
 {
+	assert(gv != NULL && abbre != NULL);
+	if(!placeIsSea(p)) {
+		if(p != CASTLE_DRACULA)
+			PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
+		else {
+			PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
+			gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
+		}
+	}			
+	else {
+		PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
+		gv->dracula.bloodpts -= 2;
+	}
+}
 
-
-
-
+static
+void draculaNotRealPlace(GameView gv, PlaceId p, char *abbre, char *move)
+{
+	if(p == TELEPORT) {
+		PlayersPlaceHist[4][gv->numRound] = CASTLE_DRACULA;
+		gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
+	}
+	else if(p == HIDE) {
+		PlayersPlaceHist[4][gv->numRound] = PlayersPlaceHist[4][gv->numRound - 1];
+		if(PlayersPlaceHist[4][gv->numRound] == SEA_UNKNOWN || placeIsSea(PlayersPlaceHist[4][gv->numRound]))
+			gv->dracula.bloodpts -= LIFE_LOSS_SEA;
+		if(PlayersPlaceHist[4][gv->numRound] == CASTLE_DRACULA)
+			gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
+	} 
+	else if(p >= 103 && p <= 107) {
+		char DN = move[2];
+		int Dn = DN - 48;
+		PlayersPlaceHist[4][gv->numRound] = PlayersPlaceHist[4][gv->numRound - Dn];
+		if(PlayersPlaceHist[4][gv->numRound] == SEA_UNKNOWN || placeIsSea(PlayersPlaceHist[4][gv->numRound]))
+			gv->dracula.bloodpts -= LIFE_LOSS_SEA;
+		if(PlayersPlaceHist[4][gv->numRound] == CASTLE_DRACULA)
+			gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
+	}
+	else if(p == SEA_UNKNOWN) {
+		PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
+		gv->dracula.bloodpts -= LIFE_LOSS_SEA;
+	}
+	else
+		PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
 }
 
 static
@@ -188,51 +228,13 @@ void set_playerInfo(GameView gv, char *move, char *abbre)
 		break;
 
 	case 'D': ;
-		// If moves to a valid locations just add. Check if loc sea then bloodpts -2. If CD +10.
+		// If Dracula makes move to a real place
 		PlaceId p = placeAbbrevToId(abbre);
-		if(placeIsReal(p)) {
-			if(!placeIsSea(p)) {
-				if(p != CASTLE_DRACULA)
-					PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
-				else {
-					PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
-					gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
-				}
-			}			
-			else {
-				PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
-				gv->dracula.bloodpts -= 2;
-			}
-		}
-
-		// Else check where i.e. C? S? HI? Dn? TP? and update. If TP then CD and +10
+		if(placeIsReal(p))
+			draculaRealPlace(gv, p, abbre);
+		// If Dracula makes move to non-Real place
 		else if(!placeIsReal(p)) {
-			if(p == TELEPORT) {
-				PlayersPlaceHist[4][gv->numRound] = CASTLE_DRACULA;
-				gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
-			}
-			else if(p == HIDE) {
-				PlayersPlaceHist[4][gv->numRound] = PlayersPlaceHist[4][gv->numRound - 1];
-				if(PlayersPlaceHist[4][gv->numRound] == SEA_UNKNOWN || placeIsSea(PlayersPlaceHist[4][gv->numRound]))
-					gv->dracula.bloodpts -= LIFE_LOSS_SEA;
-				if(PlayersPlaceHist[4][gv->numRound] == CASTLE_DRACULA)
-					gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
-			} // DB MOVE
-			else if(p >= 103 && p <= 107) {
-				char DN = move[2];
-				int Dn = DN - 48;
-				PlayersPlaceHist[4][gv->numRound] = PlayersPlaceHist[4][gv->numRound - Dn];
-				if(PlayersPlaceHist[4][gv->numRound] == SEA_UNKNOWN || placeIsSea(PlayersPlaceHist[4][gv->numRound]))
-					gv->dracula.bloodpts -= LIFE_LOSS_SEA;
-				if(PlayersPlaceHist[4][gv->numRound] == CASTLE_DRACULA)
-					gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
-			}
-			else if(p == SEA_UNKNOWN) {
-				PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
-				gv->dracula.bloodpts -= LIFE_LOSS_SEA;
-			}
-			else
-				PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
+			draculaNotRealPlace(gv, p, abbre, move);
 		}  
 
 
@@ -242,18 +244,17 @@ void set_playerInfo(GameView gv, char *move, char *abbre)
 
 		// check for trap and add to list trap. DO LATER PLS
 		 
-		//printf("%d\n",gv->dracula.placeHist[0]);
-
 		// Vampire matures and flies away if after 6 rounds not vanquished
 		if(move[5] == 'V')
 			VampireMatures(gv);
 
-		// if Draculae means end of round
+		// Increase round number and decrease gamescore at end of Dracula's turn
 		gv->numRound++;
 		gv->GameScore -= SCORE_LOSS_DRACULA_TURN;
 		break;
 	
 	default:
+		printf("Not a Valid Player");
 		return;
 	}
 	
