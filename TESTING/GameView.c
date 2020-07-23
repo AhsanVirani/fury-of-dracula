@@ -238,6 +238,8 @@ void removeTrail(GameView gv, PlaceId loc, bool isVamp)
 static
 void set_playerInfo(GameView gv, char *move, char *abbre)
 {
+	if(gv->numRound == -1)
+		gv->numRound = 0;	
 	switch(move[0]) {
 	case 'G':
 		// if Health = 0 then increase health to full new Round
@@ -352,7 +354,7 @@ GameView GvNew(char *pastPlays, Message messages[])
 	}
 	gv->graph = MapNew();
 	gv->GameScore = GAME_START_SCORE;
-	gv->numRound = 0;
+	gv->numRound = -1;
 	gv->dracula.ntrail = 0;
 	// initialising points for players
 	int i;	
@@ -434,7 +436,9 @@ PlaceId GvGetVampireLocation(GameView gv)
 PlaceId *trap;
 // trap global variable passed here
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
-{	
+{
+	assert(gv != NULL);	
+
 	trap = malloc(sizeof(PlaceId) * TRAIL_SIZE);
 	int counter = 0;
 	// if gv->dracula.locVamp != NOWHERE then remove from ntrails
@@ -454,8 +458,6 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 	}
 
 	*numTraps = counter;
-	// checking whether numTraps is correct
-	//printf("%d\n", *numTraps);
 	return trap;
 }
 
@@ -465,19 +467,33 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedMoves = 0;
-	*canFree = false;
-	return NULL;
+	assert(gv != NULL);
+	
+	int i;
+	for(i = 0; i <= gv->numRound; i++) {
+		if(PlayersPlaceHist[player][i] == NOWHERE)
+			break;
+	}
+	*numReturnedMoves = i;
+	*canFree = true;
+	return PlayersPlaceHist[player];
 }
 
 PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves, bool *canFree)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedMoves = 0;
-	*canFree = false;
-	return NULL;
+	assert(gv != NULL);
+	
+	if((gv->numRound + 1) >= numMoves) {
+		*numReturnedMoves = numMoves;
+		*canFree = true;
+		int newLocHead = (gv->numRound + 1) - numMoves;
+		return &PlayersPlaceHist[player][newLocHead];
+	}
+
+	*numReturnedMoves = (gv->numRound + 1);
+	*canFree = true;
+	return PlayersPlaceHist[player];
 }
 
 PlaceId *GvGetLocationHistory(GameView gv, Player player,
