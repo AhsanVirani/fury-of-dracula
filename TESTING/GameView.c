@@ -478,7 +478,7 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 	*canFree = true;
 	return PlayersPlaceHist[player];
 }
-
+// FIX BUG HERE
 PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
                         int *numReturnedMoves, bool *canFree)
 {
@@ -536,21 +536,30 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 void white_box() {
 	
-	char *pastPlays =	"GLS.... SGE.... HGE.... MGE.... DST.V.. GCA.... SGE.... HGE.... MGE.... DC?T... GGR.... SGE.... HGE.... MGE.... DC?T... GAL.... SGE.... HGE.... MGE.... DD3T... GSR.... SGE.... HGE.... MGE.... DHIT... GSN.... SGE.... HGE.... MGE.... DC?T... GMA.... SSTTTV.";
+	char *pastPlays =  "GGE.... SGE.... HGE.... MGE.... DCD.V.. GGE.... SGE.... HGE.... MGE.... DD1T...";
 	//setNode(pastPlays);
 	//printf("%d %d %d %d %d %d\n",placeAbbrevToId("MN"), placeAbbrevToId("PL"), placeAbbrevToId("AM"), placeAbbrevToId("PA"), placeAbbrevToId("CD"), placeAbbrevToId("LV"));
 	GameView gv = GvNew(pastPlays, NULL); 
 	
+	int *numReturnedLocs = malloc(sizeof(int));
+	bool *canFree = malloc(sizeof(bool));
+	GvGetLastMoves(gv, PLAYER_DR_SEWARD, 3,numReturnedLocs, canFree);
+	int i;
+	for(i = 0; i < *numReturnedLocs; i++){
+		printf("%d", *numReturnedLocs);
+		printf("%s ", placeIdToName(PlayersPlaceHist[PLAYER_DR_SEWARD][i]));
+	}
+
 
 	//printf("%d\n", gv->numRound);
-	printf("%d\n", GvGetHealth(gv, PLAYER_DR_SEWARD));
+//	printf("%d\n", GvGetHealth(gv, PLAYER_DR_SEWARD));
 		
 	//printf("%s\n", placeIdToName(PlayersPlaceHist[1][gv->numRound-1]));
 	//printf("%s\n", placeIdToName(PlayersPlaceHist[2][gv->numRound-1]));
 	//printf("%s\n", placeIdToName(PlayersPlaceHist[3][gv->numRound-1]));
 	//printf("%d\n", gv->hunters[0].health);
-	printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, PLAYER_DRACULA)));			
-	printf("%s\n", placeIdToName(GvGetVampireLocation(gv)));
+	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, PLAYER_DRACULA)));			
+	//printf("%s\n", placeIdToName(GvGetVampireLocation(gv)));
 	//printf("%d\n", gv->dracula.bloodpts);
 	//int *numTraps = malloc(sizeof(int));
 	//GvGetTrapLocations(gv, numTraps);
