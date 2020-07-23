@@ -467,6 +467,26 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
+
+	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	*numReturnedMoves = 0;
+	*canFree = false;
+	return 0;
+}
+// FIX BUG HERE
+PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
+                        int *numReturnedMoves, bool *canFree)
+{
+
+	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	*numReturnedMoves = 0;
+	*canFree = false;
+	return 0;
+}
+
+PlaceId *GvGetLocationHistory(GameView gv, Player player,
+                              int *numReturnedLocs, bool *canFree)
+{
 	assert(gv != NULL);
 	
 	int i;
@@ -474,44 +494,26 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 		if(PlayersPlaceHist[player][i] == NOWHERE)
 			break;
 	}
-	*numReturnedMoves = i;
+	*numReturnedLocs = i;
 	*canFree = true;
 	return PlayersPlaceHist[player];
-}
-// FIX BUG HERE
-PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
-                        int *numReturnedMoves, bool *canFree)
-{
-	assert(gv != NULL);
-	
-	if((gv->numRound + 1) >= numMoves) {
-		*numReturnedMoves = numMoves;
-		*canFree = true;
-		int newLocHead = (gv->numRound + 1) - numMoves;
-		return &PlayersPlaceHist[player][newLocHead];
-	}
-
-	*numReturnedMoves = (gv->numRound + 1);
-	*canFree = true;
-	return PlayersPlaceHist[player];
-}
-
-PlaceId *GvGetLocationHistory(GameView gv, Player player,
-                              int *numReturnedLocs, bool *canFree)
-{
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	*canFree = false;
-	return NULL;
 }
 
 PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
                             int *numReturnedLocs, bool *canFree)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	*canFree = false;
-	return 0;
+	assert(gv != NULL);
+	
+
+	if((gv->numRound) >= numLocs) {
+		*numReturnedLocs = numLocs;
+		*canFree = true;
+		int newLocHead = (player >=0 && player <= 3) && (PlayersPlaceHist[4][gv->numRound] == NOWHERE)? (gv->numRound+1-numLocs):(gv->numRound-numLocs);
+		return &PlayersPlaceHist[player][newLocHead];
+	}
+	*numReturnedLocs = (player >=0 && player <= 3) && (PlayersPlaceHist[4][gv->numRound] == NOWHERE)? (gv->numRound+1): gv->numRound;
+	*canFree = true;
+	return PlayersPlaceHist[player];
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -536,20 +538,21 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 void white_box() {
 	
-	char *pastPlays =  "GGE.... SGE.... HGE.... MGE.... DCD.V.. GGE.... SGE.... HGE.... MGE.... DD1T...";
-	//setNode(pastPlays);
+	char *pastPlays =  	"GVI.... SGE.... HGE.... MGE.... DCD.V.. GBD.... SGE.... HGE.... MGE.... DC?T... GSZ.... SGE.... HGE.... MGE.... DC?T... GSZ.... SGE.... HGE....";
 	//printf("%d %d %d %d %d %d\n",placeAbbrevToId("MN"), placeAbbrevToId("PL"), placeAbbrevToId("AM"), placeAbbrevToId("PA"), placeAbbrevToId("CD"), placeAbbrevToId("LV"));
 	GameView gv = GvNew(pastPlays, NULL); 
 	
 	int *numReturnedLocs = malloc(sizeof(int));
 	bool *canFree = malloc(sizeof(bool));
-	GvGetLastMoves(gv, PLAYER_DR_SEWARD, 3,numReturnedLocs, canFree);
+	//GvGetLastLocations(gv, PLAYER_LORD_GODALMING, 1, numReturnedLocs, canFree);
+
 	int i;
+	PlaceId *p = GvGetLastLocations(gv, PLAYER_LORD_GODALMING,5, numReturnedLocs, canFree);
 	for(i = 0; i < *numReturnedLocs; i++){
 		printf("%d", *numReturnedLocs);
-		printf("%s ", placeIdToName(PlayersPlaceHist[PLAYER_DR_SEWARD][i]));
+		printf("%s ", placeIdToName(p[i]));
 	}
-
+	//printf("%s\n", placeIdToName(PlayersPlaceHist[0][3]));
 
 	//printf("%d\n", gv->numRound);
 //	printf("%d\n", GvGetHealth(gv, PLAYER_DR_SEWARD));
