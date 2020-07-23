@@ -30,7 +30,6 @@ char move[MOVE_SIZE];
 PlaceId **PlayersPlaceHist;
 
 
-
 // Static Function Declarations
 static void setGameView(GameView, char *);
 static void set_abbreviation(char *, char *);
@@ -446,7 +445,7 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 		vampInTrail = 0;
 
 	for(int i = 0; i < gv->dracula.ntrail; i++) {
-		if(vampInTrail && gv->dracula.trail[i] == gv->dracula.locVamp) {
+		if(vampInTrail && (gv->dracula.trail[i] == gv->dracula.locVamp)) {
 			vampInTrail = 0;
 			continue;
 		}
@@ -455,6 +454,8 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 	}
 
 	*numTraps = counter;
+	// checking whether numTraps is correct
+	//printf("%d\n", *numTraps);
 	return trap;
 }
 
@@ -526,18 +527,22 @@ void white_box() {
 	
 
 	//printf("%d\n", gv->numRound);
-	printf("%d\n", gv->GameScore);
+	printf("%d\n", GvGetHealth(gv, PLAYER_DR_SEWARD));
 		
 	//printf("%s\n", placeIdToName(PlayersPlaceHist[1][gv->numRound-1]));
 	//printf("%s\n", placeIdToName(PlayersPlaceHist[2][gv->numRound-1]));
 	//printf("%s\n", placeIdToName(PlayersPlaceHist[3][gv->numRound-1]));
-	//printf("%s\n", placeIdToName(PlayersPlaceHist[4][gv->numRound-1]));			
-	printf("%d\n", gv->hunters[1].health);
+	//printf("%d\n", gv->hunters[0].health);
+	printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, PLAYER_DRACULA)));			
+	printf("%s\n", placeIdToName(GvGetVampireLocation(gv)));
 	//printf("%d\n", gv->dracula.bloodpts);
-	//printf("%s\n", placeIdToName(gv->dracula.locVamp));
+	//int *numTraps = malloc(sizeof(int));
+	//GvGetTrapLocations(gv, numTraps);
+	//printf("%d\n", *numTraps);
+	//printf("%s %s\n", placeIdToName(trap[0]), placeIdToName(trap[1]));
 	//printf("%s\n", placeIdToName(PlayersPlaceHist[0][gv->numRound]));
-	printf("%s\n", placeIdToName(PlayersPlaceHist[4][gv->numRound-2]));	
-	printf("%s\n", placeIdToName(gv->dracula.locVamp));
+	//printf("%s\n", placeIdToName(PlayersPlaceHist[4][gv->numRound-2]));	
+	//printf("%s\n", placeIdToName(gv->dracula.locVamp));
 	//printf("%s %s\n", placeIdToName(gv->dracula.trail[2]), placeIdToName(gv->dracula.trail[1]));
 	//printf("%s\n", placeIdToName(PlayersPlaceHist[0][gv->numRound+1]));
 
