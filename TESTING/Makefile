@@ -10,7 +10,7 @@
 ########################################################################
 
 CC = gcc
-CFLAGS = -Wall -Werror -g
+CFLAGS = -Wall -g
 BINS = Testing testMap
 
 all: $(BINS)
