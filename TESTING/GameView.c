@@ -72,6 +72,16 @@ struct gameView {
 	int GameScore;
 };
 
+static
+void createDynamicArray(PlaceId *arr, int size)
+{
+	arr = malloc(sizeof(PlaceId) * size);
+	assert(arr != NULL);	
+	int i;	
+	for(i = 0; i < size; i++)
+		arr[i] = NOWHERE;
+}
+
 static 
 void set_abbreviation(char *move, char *abbre)
 {
@@ -375,6 +385,7 @@ GameView GvNew(char *pastPlays, Message messages[])
 		fprintf(stderr, "Couldn't allocate GameView!\n");
 		exit(EXIT_FAILURE);
 	}
+
 	gv->graph = MapNew();
 	gv->GameScore = GAME_START_SCORE;
 	gv->numRound = -1;
@@ -513,11 +524,10 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
 	// Create a dynamically allocated array of size MAX_ROUND and free
-	moveHistory = malloc(sizeof(PlaceId)*MAX_ROUNDS);
-	int i;	
-	for(i = 0; i < MAX_ROUNDS; i++)
-		moveHistory[i] = NOWHERE;
+	createDynamicArray(moveHistory, MAX_ROUNDS);
+	
 	// If player is dracula just copy drac moves in here and send
+	int i;
 	if(player == PLAYER_DRACULA) {
 		for(i = 0; i < MAX_ROUNDS; i++) {
 			if(gv->dracula.moves[i] == NOWHERE) {
@@ -564,7 +574,7 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
 		}
 	}
 	
-	moveHistory = malloc(sizeof(PlaceId) * numMoves);
+	createDynamicArray(moveHistory, numMoves);
 	int lastElem = ((player >= 0 && player <= 3) && (gv->dracula.moves[gv->numRound] == NOWHERE))? gv->numRound: gv->numRound-1;
 	//printf("%d", lastElem);
 	//*numReturnedMoves = numMoves <= gv->numRound? numMoves: gv->numRound + 1;
@@ -646,11 +656,11 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 void white_box() {
 	
-	char *pastPlays =  "GGE.... SGE.... HGE.... MGE.... DC?.V.. GGE.... SGE.... HGE.... MGE.... DSTT... GGE.... SGE.... HGE.... MGE.... DHIT... GGE.... SGE.... HGE.... MGE.... DD1T... GSTTTTD";
+	char *pastPlays =  " ";
 	//printf("%d %d %d %d %d %d\n",placeAbbrevToId("MN"), placeAbbrevToId("PL"), placeAbbrevToId("AM"), placeAbbrevToId("PA"), placeAbbrevToId("CD"), placeAbbrevToId("LV"));
 	GameView gv = GvNew(pastPlays, NULL); 
 
-	//printf("%d\n", GvGetScore(gv));
+	printf("%d\n", GvGetScore(gv));
 	//printf("%d\n", GvGetHealth(gv, PLAYER_LORD_GODALMING));
 	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, PLAYER_LORD_GODALMING)));
 	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, PLAYER_DRACULA)));
