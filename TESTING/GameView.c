@@ -11,7 +11,6 @@
 
 ///////////////// TAKE NOTICE THAT TRAP MALFUNCTIONS AT 'M' //////////////////// FIX PLS!
 
-
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -352,12 +351,13 @@ void setGameView(GameView gv, char *pastPlays)
 		
 	int i;
 	int j = 0;
-	// set move and abbre arrays to null terminators
+	// Initialise move & abbrevations (abbre) arrays
 	for(i = 0; i < MOVE_SIZE; i++)
 		move[i] = '\0';
 	for(i = 0; i < ABBREVIATION_SIZE; i++)
 		abbre[i] = '\0';
-	// Reading the pastPlays string and recording
+
+	// Setting moves & abbreviations (abbre) array
 	for(i = 0; pastPlays[i] != '\0'; i++) {
 		if(pastPlays[i] == ' ') {					
 			continue;
@@ -366,9 +366,8 @@ void setGameView(GameView gv, char *pastPlays)
 		j++;
 		if(j == MOVE_SIZE - 1) {			
 			set_abbreviation(move, abbre);
-			// set array of moves of a player
 			set_playerInfo(gv, move, abbre);
-			// Reset arrays to null
+			// Reset arrays after use
 			reset_move_abbreviation(move, abbre);
 			j = 0;
 		}
@@ -386,43 +385,40 @@ GameView GvNew(char *pastPlays, Message messages[])
 		exit(EXIT_FAILURE);
 	}
 
+	// GameView Struct initialisation
 	gv->graph = MapNew();
 	gv->GameScore = GAME_START_SCORE;
 	gv->numRound = -1;
+	
+	int i; int j;
+	//Dracula Struct initialisation
+	for(i = 0; i < MAX_ROUNDS; i++)
+		gv->dracula.moves[i] = NOWHERE;
 	gv->dracula.ntrail = 0;
+	gv->dracula.bloodpts = GAME_START_BLOOD_POINTS;
+	gv->dracula.locVamp = NOWHERE;
 
-	// Set the moves array inside the hunters and dracula structs to NOWHERE
-	int i;
+	//Hunters Struct initialisation
+	for(i = 0; i < (NUM_PLAYERS - 1); i++)
+		gv->hunters[i].health = GAME_START_HUNTER_LIFE_POINTS;
 	for(i = 0; i < NUM_PLAYERS - 1; i++) {
-		for(int j = 0; j < MAX_ROUNDS; j++)
+		for(j = 0; j < MAX_ROUNDS; j++)
 			gv->hunters[i].moves[j] = NOWHERE;
 	}
 
-	for(i = 0; i < MAX_ROUNDS; i++)
-		gv->dracula.moves[i] = NOWHERE;
-
-
-	// initialising points for players	
-	gv->dracula.bloodpts = GAME_START_BLOOD_POINTS;
-	for(i = 0; i < (NUM_PLAYERS - 1); i++)
-		gv->hunters[i].health = GAME_START_HUNTER_LIFE_POINTS;	
-
-	// setting up Players Place History Dynamic Array
+	// Initialising Players Location Dynamic Array
 	PlayersPlaceHist = malloc(sizeof(PlaceId *) * NUM_PLAYERS);
 	assert(PlayersPlaceHist != NULL);
 	for(i = 0; i < NUM_PLAYERS; i++) {
 		PlayersPlaceHist[i] = malloc(sizeof(PlaceId) * MAX_ROUNDS);
 		assert(PlayersPlaceHist[i] != NULL);
 	}
-	// Setting all the Past moves to NoWhere initially
 	for(i = 0; i < NUM_PLAYERS; i++) {
 		for(int j = 0; j < MAX_ROUNDS; j++)
 			PlayersPlaceHist[i][j] = NOWHERE;
 	}
-	// Set locVamp
-	gv->dracula.locVamp = NOWHERE;
 	
-	// loop through pastPlays and edit round Numbers and all the info inside players	
+	// Process PastPlays String	
 	setGameView(gv, pastPlays);	
 
 	return gv;
