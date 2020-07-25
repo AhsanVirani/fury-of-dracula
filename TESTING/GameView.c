@@ -9,8 +9,6 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
-///////////////// TAKE NOTICE THAT TRAP MALFUNCTIONS AT 'M' //////////////////// FIX PLS!
-
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -39,7 +37,8 @@ static void set_abbreviation(char *, char *);
 static void reset_move_abbreviation(char *, char *);
 static void set_playerInfo(GameView, char *, char *);
 static void FillPlayerLocationArr(GameView, Player, char *);
-static void DoDraculaActions(GameView gv, char action);
+static void PlaceDraculaEncounter(GameView gv, char encounter);
+static void PlaceDraculaAction(GameView gv, char action);
 static void restoreHHealth(GameView, int);
 static void restHunterspts(GameView, int);
 static void HunterEncounter(GameView, int, char *);
@@ -207,9 +206,9 @@ void set_playerInfo(GameView gv, char *move, char *abbre)
 		else if(!placeIsReal(p))
 			draculaNotRealPlace(gv, p, abbre, move);
 		// check for trap and add to list if exists
-		DoDraculaActions(gv, move[3]);
-		DoDraculaActions(gv, move[4]);
-		DoDraculaActions(gv, move[5]);
+		PlaceDraculaEncounter(gv, move[3]);
+		PlaceDraculaEncounter(gv, move[4]);
+		PlaceDraculaAction(gv, move[5]);
 		// Increase round number and decrease gamescore at end of Dracula's turn
 		incrementRound(gv);
 		decrementGameScore(gv);
@@ -297,22 +296,23 @@ void HunterEncounter(GameView gv, int HunterIndex, char *move)
 }
 
 static
-void DoDraculaActions(GameView gv, char action)
+void PlaceDraculaEncounter(GameView gv, char encounter)
 {
-	if(action == 'T')
-		addTrail(gv, PlayersPlaceHist[4][gv->numRound], false);
-	// check and add Vampire Location if exist 
-		else if(action == 'V')
-			addTrail(gv, PlayersPlaceHist[4][gv->numRound], true);
-		// removing trap malfunction
-		else if(action == 'M')
-			removeTrail(gv, gv->dracula.locVamp, false);
-		// Handling Vampire Mature
-		else if(action == 'V') {
-			VampireMatures(gv);
-			removeTrail(gv, gv->dracula.locVamp, true);
-		}
-	return;
+	if(encounter == 'T')
+		addTrail(gv, PlayersPlaceHist[4][gv->numRound], false); 
+	else if(encounter == 'V')
+		addTrail(gv, PlayersPlaceHist[4][gv->numRound], true);
+}
+
+static
+void PlaceDraculaAction(GameView gv, char action)
+{
+	if(action == 'M')
+		removeTrail(gv, gv->dracula.locVamp, false);
+	else if(action == 'V') {
+		VampireMatures(gv);
+		removeTrail(gv, gv->dracula.locVamp, true);
+	}
 }
 
 static
@@ -532,7 +532,6 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 	if(player == PLAYER_DRACULA) {
 		for(i = 0; i < MAX_ROUNDS; i++) {
 			if(gv->dracula.moves[i] == NOWHERE) {
-				printf("YES");
 				break;
 			}
 			moveHistory[i] = gv->dracula.moves[i];
@@ -660,18 +659,19 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 void white_box() {
 	
-	char *pastPlays = "GVI.... SGE.... HGE.... MGE.... DCD.V.. GBD.... SGE.... HGE.... MGE.... DC?T... GSZ.... SGE.... HGE.... MGE.... DC?T... GSZ.... SGE.... HGE....";	
+	char *pastPlays =	"GGE.... SGE.... HGE.... MGE.... DC?.V.. "
+			"GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T.V.";
 	//printf("%d %d %d %d %d %d\n",placeAbbrevToId("MN"), placeAbbrevToId("PL"), placeAbbrevToId("AM"), placeAbbrevToId("PA"), placeAbbrevToId("CD"), placeAbbrevToId("LV"));
 	GameView gv = GvNew(pastPlays, NULL); 
 
 	//printf("%d\n", GvGetRound(gv));
 	//printf("%d\n", GvGetPlayer(gv));
-	//printf("%d\n", GvGetScore(gv));
+	printf("%d\n", GvGetScore(gv));
+	printf("%s\n",	placeIdToName(GvGetVampireLocation(gv)));
+	printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, PLAYER_DRACULA)));
 	//printf("%d\n", GvGetHealth(gv, PLAYER_LORD_GODALMING));
 	//printf("%d\n", GvGetHealth(gv, PLAYER_DRACULA));
 	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, PLAYER_LORD_GODALMING)));
-	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, PLAYER_DRACULA)));
-//	printf("%s\n",	placeIdToName(GvGetVampireLocation(gv)));
 	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, 2)));
 	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, 3)));
 	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, 4)));
