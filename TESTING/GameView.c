@@ -29,7 +29,7 @@ char abbre[ABBREVIATION_SIZE];
 char move[MOVE_SIZE];
 PlaceId **PlayersPlaceHist;
 PlaceId *moveHistory;
-
+PlaceId * trap; // work done after trap function. Free this
 
 // Static Function Declarations
 static void setGameView(GameView, char *);
@@ -442,13 +442,13 @@ Round GvGetRound(GameView gv)
 Player GvGetPlayer(GameView gv)
 {
 	assert(gv != NULL);
-	int i;
-	for(i = 0; i < NUM_PLAYERS; i++) {
-		if(PlayersPlaceHist[i][gv->numRound] == NOWHERE)
+	int pNum;
+	for(pNum = 0; pNum < NUM_PLAYERS; pNum++) {
+		if(PlayersPlaceHist[pNum][gv->numRound] == NOWHERE)
 			break;
 	}
 
-	return i;
+	return pNum;
 }
 
 int GvGetScore(GameView gv)
@@ -488,16 +488,15 @@ PlaceId GvGetVampireLocation(GameView gv)
 	return gv->dracula.locVamp;
 }
 
-PlaceId *trap;
-// trap global variable passed here
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 {
 	assert(gv != NULL);	
 
 	trap = malloc(sizeof(PlaceId) * TRAIL_SIZE);
 	int counter = 0;
-	// if gv->dracula.locVamp != NOWHERE then remove from ntrails
 	int vampInTrail;
+
+	// remove Vampire from trail if exists
 	if(gv->dracula.locVamp != NOWHERE)
 		vampInTrail = 1;
 	else
@@ -521,13 +520,13 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
 {
-	// Create a dynamically allocated array of size MAX_ROUND and free
+	// Create a dynamically allocated array of size MAX_ROUND
 	moveHistory = malloc(sizeof(PlaceId) *MAX_ROUNDS);
 	assert(moveHistory != NULL);
 	for(int i = 0; i < MAX_ROUNDS; i++)
 		moveHistory[i] = NOWHERE;
 	
-	// If player is dracula just copy drac moves in here and send
+	// Setting up MoveHistory array for PLAYER_DRACULA
 	int i;
 	if(player == PLAYER_DRACULA) {
 		for(i = 0; i < MAX_ROUNDS; i++) {
@@ -536,32 +535,30 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 			}
 			moveHistory[i] = gv->dracula.moves[i];
 		}
-	//printf("%d", i);
-	*numReturnedMoves = i;
-	*canFree = true;
-	return moveHistory;
 	}
 
-	// If player is hunter, an additional check that if hospital go to placehist and copy real loc of death	
-	for(i = 0; i < MAX_ROUNDS; i++) {
-		if(gv->hunters[player].moves[i] == NOWHERE)
-				break;
-		if(gv->hunters[player].moves[i] == ST_JOSEPH_AND_ST_MARY) {
-			moveHistory[i] = PlayersPlaceHist[player][i];
-			continue;
+	// Setting up MoveHistory array for HUNTERS
+	else {	
+		for(i = 0; i < MAX_ROUNDS; i++) {
+			if(gv->hunters[player].moves[i] == NOWHERE)
+					break;
+			if(gv->hunters[player].moves[i] == ST_JOSEPH_AND_ST_MARY) {
+				moveHistory[i] = PlayersPlaceHist[player][i];
+				continue;
+			}
+			moveHistory[i] = gv->hunters[player].moves[i];
 		}
-		moveHistory[i] = gv->hunters[player].moves[i];
 	}
+
 	*numReturnedMoves = i;
 	*canFree = true;
 	return moveHistory;
 }
-// FIX BUG HERE
-PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
-                        int *numReturnedMoves, bool *canFree)
+
+static
+int *findnumReturnedMoves(GameView gv, Player player, int numMoves, int *numReturnedMoves)
 {
-	assert(gv != NULL);
-	
+	// Finding numReturnedMoves
 	if(numMoves <= gv->numRound)
 		*numReturnedMoves = numMoves;
 
@@ -570,18 +567,25 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
 			*numReturnedMoves = gv->numRound + 1;
 		else {
 			*numReturnedMoves = gv->numRound;
-			//printf("%d\n", *numReturnedMoves);		
 		}
 	}
-	
-	moveHistory = malloc(sizeof(PlaceId) * *numReturnedMoves);
+	return numReturnedMoves;
+}
+
+PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
+                        int *numReturnedMoves, bool *canFree)
+{
+	assert(gv != NULL);
+
+	// Finds numReturnedMoves
+	numReturnedMoves = findnumReturnedMoves(gv, player, numMoves, numReturnedMoves);
+	moveHistory = malloc(sizeof(PlaceId) * (*numReturnedMoves));
 	assert(moveHistory != NULL);
 	for(int i = 0; i < *numReturnedMoves; i++)
 		moveHistory[i] = NOWHERE;
 	int lastElem = ((player >= 0 && player <= 3) && (gv->dracula.moves[gv->numRound] == NOWHERE))? gv->numRound: gv->numRound-1;
-	//printf("%d", lastElem);
-	//*numReturnedMoves = numMoves <= gv->numRound? numMoves: gv->numRound + 1;
-	// for dracula
+
+	// Setting up lastMoves array for PLAYER_DRACULA
 	int i;
 	if(player == PLAYER_DRACULA) {
 		for(i = *numReturnedMoves - 1; i >= 0 && lastElem >= 0; i--) {
@@ -589,7 +593,7 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
 			lastElem--;
 		}
 	}
-
+	// Setting up lastMoves array for HUNTERS
 	else {
 		for(i = *numReturnedMoves - 1; i >= 0 && lastElem >= 0; i--) {
 			if(gv->hunters[player].moves[lastElem] == ST_JOSEPH_AND_ST_MARY)
@@ -600,7 +604,6 @@ PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
 		}
 	}
 
-	//*numReturnedMoves = numMoves <= gv->numRound? numMoves: gv->numRound + 1;
 	*canFree = true;
 	return moveHistory;
 }
@@ -625,7 +628,6 @@ PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
 {
 	assert(gv != NULL);
 	
-
 	if((gv->numRound) >= numLocs) {
 		*numReturnedLocs = numLocs;
 		*canFree = true;
@@ -659,8 +661,7 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 void white_box() {
 	
-	char *pastPlays =	"GGE.... SGE.... HGE.... MGE.... DC?.V.. "
-			"GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T.V.";
+	char *pastPlays =	"GGE.... SGE.... HGE.... MGE.... DC?.V.. GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T.V.";
 	//printf("%d %d %d %d %d %d\n",placeAbbrevToId("MN"), placeAbbrevToId("PL"), placeAbbrevToId("AM"), placeAbbrevToId("PA"), placeAbbrevToId("CD"), placeAbbrevToId("LV"));
 	GameView gv = GvNew(pastPlays, NULL); 
 
@@ -703,7 +704,7 @@ void white_box() {
 	//GvGetMoveHistory(gv, PLAYER_DRACULA, numReturnedMoves, canFree);
 
 	int i;
-	PlaceId *p = GvGetMoveHistory(gv, PLAYER_DRACULA, numReturnedMoves, canFree);
+	PlaceId *p = GvGetLastMoves(gv, PLAYER_DRACULA,10, numReturnedMoves, canFree);
 	printf("%d", *numReturnedMoves);
 	for(i = 0; i < *numReturnedMoves; i++){
 		printf("%s ", placeIdToName(p[i]));
