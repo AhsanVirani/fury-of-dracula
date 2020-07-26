@@ -15,11 +15,11 @@ BINS = Testing testMap
 
 all: $(BINS)
 
-Testing: Testing.o GameView.o Map.o Places.o
+Testing: Testing.o GameView.o Map.o Places.o Queue.o
 Testing.o: Testing.c GameView.h Map.h Places.h Game.h
 
 testMap: testMap.o Map.o Places.o
-testMap.o: testMap.c Map.h Places.h
+testMap.o: testMap.c Map.h Places.h 
 
 Places.o: Places.c Places.h Game.h
 Map.o: Map.c Map.h Places.h Game.h
