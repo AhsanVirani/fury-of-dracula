@@ -798,10 +798,10 @@ PlaceId *GvGetReachable(GameView gv, Player player, Round round,
 				}
 			}
 			else if(!InArray(c->p)){
-					connectionArr[j] = c->p;
-					printf("%s\n", placeIdToName(connectionArr[j]));
-					//printf("%s\n", placeIdToName(connectionArr[j]));
-					j++;
+				connectionArr[j] = c->p;
+				printf("%s\n", placeIdToName(connectionArr[j]));
+				//printf("%s\n", placeIdToName(connectionArr[j]));
+				j++;
 			}
 			c = c->next;
 		}
@@ -815,13 +815,97 @@ PlaceId *GvGetReachable(GameView gv, Player player, Round round,
 	return connectionArr;
 }
 
+// Add Road Connection to the Array
+static
+void addRoadConnection(PlaceId p, int pos)
+{
+	connectionArr[pos] = p;
+}
+
+// Add Boat Connection to the Array
+static
+void addBoatConnection(PlaceId p, int pos)
+{
+	connectionArr[pos] = p;
+}
+
 PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
                               PlaceId from, bool road, bool rail,
                               bool boat, int *numReturnedLocs)
 {
+	assert(gv != NULL);
 
-	*numReturnedLocs = 0;
-	return NULL;
+	connectionArr = malloc(sizeof(PlaceId) * MAX_CONNECTION);
+	int i; int j = 1;	
+	for(i = 0; i < MAX_CONNECTION; i++)
+		connectionArr[i] = NOWHERE;
+
+	connectionArr[0] = from;
+	printf("%s\n", placeIdToName(connectionArr[0]));
+	ConnList c = MapGetConnections(gv->graph, connectionArr[0]);
+		
+	if(player == 4) {
+		//printf("%s\n", placeIdToName(connectionArr[0]));
+		while(c != NULL) {
+			if(c->type == RAIL) {
+				c = c->next;
+				continue;
+			}
+			if(c->p == ST_JOSEPH_AND_ST_MARY) {
+				c = c->next;
+				continue;
+			}
+			if(road) {
+				addRoadConnection(c->p, j);
+				j++;		
+			}
+
+			else if(boat) {
+				addBoatConnection(c->p, j);
+				j++;	
+			}
+			//printf("%s\n", placeIdToName(connectionArr[j]));
+			c = c->next;
+		}
+	}
+
+	else {
+		int RailMoves = distanceRail(round, player); 
+		while(c != NULL) {
+			if(rail) {
+				if(c->type == RAIL) {
+					if(RailMoves > 0) {
+						j = addRailConn(gv, c->p, RailMoves, j);
+					}
+					// if RailMoves == 0 then nothing to add and j = 1 right place to insert for next time
+					else {
+					c = c->next;
+					continue;
+					}
+				}
+			}
+			else if(!InArray(c->p)){
+				if(road) {
+					addRoadConnection(c->p, j);
+					j++;
+				}
+				else if(boat) {
+					addBoatConnection(c->p, j);
+					j++;
+				}
+					//printf("%s\n", placeIdToName(connectionArr[j]));
+					//printf("%s\n", placeIdToName(connectionArr[j]));
+			}
+			c = c->next;
+		}
+	}
+		// Check if rail connection then call add to railconn
+		// takes RailMoves as important parameter
+		
+		// otherwise simply adds
+
+	*numReturnedLocs = j;
+	return connectionArr;
 }
 
 void white_box() {
@@ -831,7 +915,7 @@ void white_box() {
 	GameView gv = GvNew(pastPlays, NULL);
 	
 	int *numReturnedLocs = malloc(sizeof(int));
-	PlaceId *c = GvGetReachable(gv, PLAYER_LORD_GODALMING, 3, SARAGOSSA, numReturnedLocs);
+	PlaceId *c = GvGetReachableByType(gv, PLAYER_LORD_GODALMING, 3, PARIS, false, false, false, numReturnedLocs);
 	printf("%d\n", *numReturnedLocs);
 
 	//printf("%s\n", placeIdToName(connectionArr[0]));

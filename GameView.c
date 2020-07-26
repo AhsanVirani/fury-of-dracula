@@ -23,6 +23,8 @@
 #define MAX_ROUNDS 366
 #define ABBREVIATION_SIZE 3
 #define MOVE_SIZE 8
+#define MAX_RAIL_CONNECTIONS 50
+#define MAX_CONNECTION 100
 
 // global declarations
 char abbre[ABBREVIATION_SIZE];
@@ -30,6 +32,8 @@ char move[MOVE_SIZE];
 PlaceId **PlayersPlaceHist;
 PlaceId *moveHistory;
 PlaceId * trap; // work done after trap function. Free this
+PlaceId *visited;
+PlaceId *connectionArr;
 
 // Static Function Declarations
 static void setGameView(GameView, char *);
@@ -642,21 +646,263 @@ PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
 ////////////////////////////////////////////////////////////////////////
 // Making a Move
 
+
+static 
+int distanceRail(int roundNum, Player player)
+{
+	int sum = roundNum + player;
+	if(sum % 4 == 0)
+		return 0;
+	if(sum % 4 == 1)
+		return 1;
+	if(sum % 4 == 2)
+		return 2;
+	return 3;
+}
+
+
+static
+void makeVisited(PlaceId from)
+{
+	int i;
+	for(i = 0; i < MAX_RAIL_CONNECTIONS; i++) {
+		if(visited[i] == NOWHERE)
+			break;	
+	}
+	visited[i] = from;
+}
+
+
+static 
+int checkVisited(PlaceId from)
+{	
+	int i;
+	for(i = 0; i < MAX_RAIL_CONNECTIONS; i++) {
+		if(visited[i] == from)
+			return 1;
+	}
+	return 0;
+}
+
+static
+int InArray(PlaceId p)
+{
+	int i;
+	for(i = 0; i < MAX_CONNECTION; i++) {
+		if(connectionArr[i] == p)
+			return 1;
+	}
+	return 0;
+}
+
+static
+int wrapper(GameView gv, PlaceId from, int RailMoves, int pos)
+{
+	if(!InArray(from)) {
+		connectionArr[pos] = from;
+		printf("%s\n", placeIdToName(connectionArr[pos]));
+		makeVisited(from);
+		pos++;
+	}
+
+	if(RailMoves == 1) {	
+		return pos;
+	}
+
+	ConnList w = MapGetConnections(gv->graph, from);
+	while(w != NULL) {
+		if(w->type != RAIL) {
+			w = w->next;
+			continue;
+		}	
+		if(checkVisited(w->p)) {
+			w = w->next;		
+			continue;
+		}
+		pos = wrapper(gv, w->p, RailMoves-1, pos);
+		w = w->next;
+	}
+	return pos;
+}
+
+// returns total number of connections added
+static
+int addRailConn(GameView gv, PlaceId from, int RailMoves, int pos)
+{
+	// store place id
+	visited = malloc(sizeof(PlaceId) * MAX_RAIL_CONNECTIONS);
+	for(int i = 0; i < MAX_RAIL_CONNECTIONS; i++)
+		visited[i] = NOWHERE;
+	//makeVisited(connectionArr[0]);
+	pos = wrapper(gv, from, RailMoves, pos);
+	free(visited);
+
+	return pos;
+}
+
+// addRailConn
+// adds from the array
+// creates visited array. from to visited array puts.
+// for loop to see neights of from. If rail connection found and not visited, railMoves-- as parameter
+// at top, adds to array the first neighbour rail connection. checks if railMoves == 0 return;
+// If returns, means railMoves == 1 and checks all other rail connections of main src and adds to array similarly and ends
+// else add 1st rail conn of src main to array and marks as visited. Now checks all its neighbours i.e. 2nd rail connection from src
+// if not visited and rail connection then recursive call with railMoves--;
+
+
 PlaceId *GvGetReachable(GameView gv, Player player, Round round,
                         PlaceId from, int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
+	assert(gv != NULL);
+
+	connectionArr = malloc(sizeof(PlaceId) * MAX_CONNECTION);
+	int i; int j = 1;	
+	for(i = 0; i < MAX_CONNECTION; i++)
+		connectionArr[i] = NOWHERE;
+
+	connectionArr[0] = from;
+	printf("%s\n", placeIdToName(connectionArr[0]));
+	ConnList c = MapGetConnections(gv->graph, connectionArr[0]);
+		
+	if(player == 4) {
+		//printf("%s\n", placeIdToName(connectionArr[0]));
+		while(c != NULL) {
+			if(c->type == RAIL) {
+				c = c->next;
+				continue;
+			}
+			if(c->p == ST_JOSEPH_AND_ST_MARY) {
+				c = c->next;
+				continue;
+			}
+			connectionArr[j] = c->p;
+			//printf("%s\n", placeIdToName(connectionArr[j]));
+			j++;
+			c = c->next;
+		}
+	}
+
+	else {
+		int RailMoves = distanceRail(round, player); 
+		while(c != NULL) {
+			if(c->type == RAIL) {
+				if(RailMoves > 0) {
+					j = addRailConn(gv, c->p, RailMoves, j);
+				}
+				// if RailMoves == 0 then nothing to add and j = 1 right place to insert for next time
+				else {
+				c = c->next;
+				continue;
+				}
+			}
+			else if(!InArray(c->p)){
+				connectionArr[j] = c->p;
+				printf("%s\n", placeIdToName(connectionArr[j]));
+				//printf("%s\n", placeIdToName(connectionArr[j]));
+				j++;
+			}
+			c = c->next;
+		}
+	}
+		// Check if rail connection then call add to railconn
+		// takes RailMoves as important parameter
+		
+		// otherwise simply adds
+
+	*numReturnedLocs = j;
+	return connectionArr;
+}
+
+// Add Road Connection to the Array
+static
+void addRoadConnection(PlaceId p, int pos)
+{
+	connectionArr[pos] = p;
+}
+
+// Add Boat Connection to the Array
+static
+void addBoatConnection(PlaceId p, int pos)
+{
+	connectionArr[pos] = p;
 }
 
 PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
                               PlaceId from, bool road, bool rail,
                               bool boat, int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
-}
+	assert(gv != NULL);
 
+	connectionArr = malloc(sizeof(PlaceId) * MAX_CONNECTION);
+	int i; int j = 1;	
+	for(i = 0; i < MAX_CONNECTION; i++)
+		connectionArr[i] = NOWHERE;
+
+	connectionArr[0] = from;
+	printf("%s\n", placeIdToName(connectionArr[0]));
+	ConnList c = MapGetConnections(gv->graph, connectionArr[0]);
+		
+	if(player == 4) {
+		//printf("%s\n", placeIdToName(connectionArr[0]));
+		while(c != NULL) {
+			if(c->type == RAIL) {
+				c = c->next;
+				continue;
+			}
+			if(c->p == ST_JOSEPH_AND_ST_MARY) {
+				c = c->next;
+				continue;
+			}
+			if(road) {
+				addRoadConnection(c->p, j);
+				j++;		
+			}
+
+			else if(boat) {
+				addBoatConnection(c->p, j);
+				j++;	
+			}
+			//printf("%s\n", placeIdToName(connectionArr[j]));
+			c = c->next;
+		}
+	}
+
+	else {
+		int RailMoves = distanceRail(round, player); 
+		while(c != NULL) {
+			if(rail) {
+				if(c->type == RAIL) {
+					if(RailMoves > 0) {
+						j = addRailConn(gv, c->p, RailMoves, j);
+					}
+					// if RailMoves == 0 then nothing to add and j = 1 right place to insert for next time
+					else {
+					c = c->next;
+					continue;
+					}
+				}
+			}
+			else if(!InArray(c->p)){
+				if(road) {
+					addRoadConnection(c->p, j);
+					j++;
+				}
+				else if(boat) {
+					addBoatConnection(c->p, j);
+					j++;
+				}
+					//printf("%s\n", placeIdToName(connectionArr[j]));
+					//printf("%s\n", placeIdToName(connectionArr[j]));
+			}
+			c = c->next;
+		}
+	}
+		// Check if rail connection then call add to railconn
+		// takes RailMoves as important parameter
+		
+		// otherwise simply adds
+
+	*numReturnedLocs = j;
+	return connectionArr;
+}
 
