@@ -23,6 +23,9 @@
 #include "Places.h"
 #include "testUtils.h"
 
+#define green() printf("\033[1;32m")
+#define resetColour() printf("\033[0m")
+
 int main(void)
 {
 	{///////////////////////////////////////////////////////////////////
@@ -165,6 +168,48 @@ int main(void)
 		printf("Test passed!\n");
 		DvFree(dv);
 	}
+
+    printf("\n");
+    printf("///////////////////////////////////////////////////////////////////\n");
+    printf("///////////////////       MY TESTS       //////////////////////////\n");
+    printf("///////////////////////////////////////////////////////////////////\n");
+    printf("\n");
+
+    printf("***** Testing DvGetValidMoves and DvWhereCanIGo *****\n");
+
+    {///////////////////////////////////////////////////////////////////
+    printf("Test for when HIDE and DB are valid\n");
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[9] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 4);
+    sortPlaces(moves, num);
+    assert(moves[0] == GALATZ);
+    assert(moves[1] == KLAUSENBURG);
+    assert(moves[2] == HIDE);
+    assert(moves[3] == DOUBLE_BACK_1);
+    free(moves);
+
+    // DvWhereCanIGo
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 3);
+    sortPlaces(locations, num);
+    assert(locations[0] == CASTLE_DRACULA);
+    assert(locations[1] == GALATZ);
+    assert(locations[2] == KLAUSENBURG);
+    free(locations);
+
+    DvFree(dv);
+    green();
+    printf("Test passed!\n");
+    }
 
 	return EXIT_SUCCESS;
 }
