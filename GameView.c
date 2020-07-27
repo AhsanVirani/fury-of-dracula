@@ -31,7 +31,7 @@ char abbre[ABBREVIATION_SIZE];
 char move[MOVE_SIZE];
 PlaceId **PlayersPlaceHist;
 PlaceId *moveHistory;
-PlaceId * trap; // work done after trap function. Free this
+PlaceId *trap; // work done after trap function. Free this
 PlaceId *visited;
 PlaceId *connectionArr;
 
@@ -442,6 +442,10 @@ void decrementGameScore(GameView gv)
 
 void GvFree(GameView gv)
 {
+	assert(gv != NULL);
+
+	MapFree(gv->graph);
+	free(gv);
 }
 
 ////////////////////////////////////////////////////////////////////////
