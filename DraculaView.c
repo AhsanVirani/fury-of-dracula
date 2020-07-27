@@ -101,11 +101,6 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
     // Get current location
     PlaceId currentLocation = GvGetPlayerLocation(dv->gv, PLAYER_DRACULA);
 
-    // List of last 5 moves (trail of dracula)
-    int *numTrailMoves = malloc(sizeof(int));
-    assert(numTrailMoves != NULL);
-    PlaceId *trail = GvGetLastMoves(dv->gv, PLAYER_DRACULA, 5, numTrailMoves, false);
-
     // Replace currentLocation with HIDE
     for (int i = 0; i < *numReturnedMoves; i++) {
         if (currentLocation == moves[i]) {
@@ -114,18 +109,30 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
         }
     }
 
+    // Find locations on trail
+    int *tempNum = malloc(sizeof(int));
+    bool *tempBool = malloc(sizeof(bool));
+    assert(tempNum != NULL);
+    assert(tempBool != NULL);
+    PlaceId *lastLocations = GvGetLastLocations(dv->gv, PLAYER_DRACULA, 5, tempNum, tempBool);
+
     // Replace moves on trail with corresponding double-back
-    for (int nTrail = 0; nTrail < *numTrailMoves; nTrail++) {
+    for (int nTrail = 0; nTrail < *tempNum; nTrail++) {
         for (int i = 0; i < *numReturnedMoves; i++) {
-            if (trail[nTrail] == moves[i]) {
+            if (lastLocations[nTrail] == moves[i]) {
                 moves[i] = DOUBLE_BACK_1 + nTrail;
                 break;
             }
         }
     }
     
-    // Free numTrailMoves
-    free(numTrailMoves);
+    // Free
+    if (tempBool) {
+        free(lastLocations);
+    }
+    free(tempNum);
+    free(tempBool);
+
 
     return moves;
 
@@ -155,8 +162,10 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
 
     // List of last 5 moves (trail of dracula)
     int *numTrailMoves = malloc(sizeof(int));
+    bool *trailBool = malloc(sizeof(bool));
     assert(numTrailMoves != NULL);
-    PlaceId *trail = GvGetLastMoves(dv->gv, PLAYER_DRACULA, 5, numTrailMoves, false);
+    assert(trailBool != NULL);
+    PlaceId *trail = GvGetLastMoves(dv->gv, PLAYER_DRACULA, 5, numTrailMoves, trailBool);
 
     // Check for hide and double-backs on trail
     int hide = false;
@@ -179,12 +188,26 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
     // Remove double-back locations (trail locations) if illegal (already used double-back)
     if (doubleBack == true) {
         // Remove locations on the trail
-        for (int i = 0; i < *numTrailMoves; i++) {
-            reachable = removeLocationFromArray(reachable, trail[i], numReturnedLocs);
+        // Find locations on trail
+        int *tempNum = malloc(sizeof(int));
+        bool *tempBool = malloc(sizeof(bool));
+        assert(tempNum != NULL);
+        assert(tempBool != NULL);
+        PlaceId *lastLocations = GvGetLastLocations(dv->gv, PLAYER_DRACULA, *numTrailMoves, tempNum, tempBool);
+
+        for (int i = 0; i < *tempNum; i++) {
+            reachable = removeLocationFromArray(reachable, lastLocations[i], numReturnedLocs);
         }
+
+        if (tempBool) {
+            free(lastLocations);
+        }
+        free(tempNum);
+        free(tempBool);
     }
-    // Free numTrailMoves
+    // Free
     free(numTrailMoves);
+    free(trailBool);
 
     // If teleport is only move, return NULL
     if (*numReturnedLocs == 0) {
