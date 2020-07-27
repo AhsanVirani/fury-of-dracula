@@ -8,6 +8,7 @@
 // 2020-07-10   v3.0    Team Dracula <cs2521@cse.unsw.edu.au>
 //
 ////////////////////////////////////////////////////////////////////////
+// M malfunction 6th character. Fix bug
 
 #include <assert.h>
 #include <stdbool.h>
@@ -23,18 +24,26 @@
 #define MAX_ROUNDS 366
 #define ABBREVIATION_SIZE 3
 #define MOVE_SIZE 8
+#define MAX_RAIL_CONNECTIONS 50
+#define MAX_CONNECTION 100
 
 // global declarations
 char abbre[ABBREVIATION_SIZE];
 char move[MOVE_SIZE];
 PlaceId **PlayersPlaceHist;
-
+PlaceId *moveHistory;
+PlaceId * trap; // work done after trap function. Free this
+PlaceId *visited;
+PlaceId *connectionArr;
 
 // Static Function Declarations
 static void setGameView(GameView, char *);
 static void set_abbreviation(char *, char *);
 static void reset_move_abbreviation(char *, char *);
 static void set_playerInfo(GameView, char *, char *);
+static void FillPlayerLocationArr(GameView, Player, char *);
+static void PlaceDraculaEncounter(GameView gv, char encounter);
+static void PlaceDraculaAction(GameView gv, char action);
 static void restoreHHealth(GameView, int);
 static void restHunterspts(GameView, int);
 static void HunterEncounter(GameView, int, char *);
@@ -45,17 +54,21 @@ static void incrementRound(GameView);
 static void decrementGameScore(GameView);
 static void addTrail(GameView gv, PlaceId loc, bool isVamp);
 static void removeTrail(GameView gv, PlaceId loc, bool isVamp);
+static int *findnumReturnedMoves(GameView gv, Player player, int numMoves, int *numReturnedMoves);
+static int distanceRail(int roundNum, Player player);
 
 
 struct node_hunters {
-	int health;				// health of a given player
+	int health;									// health of a given player
+	PlaceId moves[MAX_ROUNDS];
 };
 
 struct node_dracula {
 	int bloodpts;								// health of a given player
 	int ntrail;									// size of trail	
-	PlaceId 	trail[TRAIL_SIZE];			// location of trail. Dynamic	
-	PlaceId locVamp;							// location of vampire. Should be freed after use	
+	PlaceId moves[MAX_ROUNDS];
+	PlaceId 	trail[TRAIL_SIZE];			// location of trail.	
+	PlaceId locVamp;							// location of vampire
 };
 
 struct gameView {
@@ -65,6 +78,154 @@ struct gameView {
 	Round numRound;
 	int GameScore;
 };
+
+////////////////////////////////////////////////////////////////////////
+// Constructor/Destructor
+
+GameView GvNew(char *pastPlays, Message messages[])
+{
+	GameView gv = malloc(sizeof(*gv));
+	if (gv == NULL) {
+		fprintf(stderr, "Couldn't allocate GameView!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	// GameView Struct initialisation
+	gv->graph = MapNew();
+	gv->GameScore = GAME_START_SCORE;
+	gv->numRound = 0;
+	
+	int i; int j;
+	//Dracula Struct initialisation
+	for(i = 0; i < MAX_ROUNDS; i++)
+		gv->dracula.moves[i] = NOWHERE;
+	gv->dracula.ntrail = 0;
+	gv->dracula.bloodpts = GAME_START_BLOOD_POINTS;
+	gv->dracula.locVamp = NOWHERE;
+
+	//Hunters Struct initialisation
+	for(i = 0; i < (NUM_PLAYERS - 1); i++)
+		gv->hunters[i].health = GAME_START_HUNTER_LIFE_POINTS;
+	for(i = 0; i < NUM_PLAYERS - 1; i++) {
+		for(j = 0; j < MAX_ROUNDS; j++)
+			gv->hunters[i].moves[j] = NOWHERE;
+	}
+
+	// Initialising Players Location Dynamic Array
+	PlayersPlaceHist = malloc(sizeof(PlaceId *) * NUM_PLAYERS);
+	assert(PlayersPlaceHist != NULL);
+	for(i = 0; i < NUM_PLAYERS; i++) {
+		PlayersPlaceHist[i] = malloc(sizeof(PlaceId) * MAX_ROUNDS);
+		assert(PlayersPlaceHist[i] != NULL);
+	}
+	for(i = 0; i < NUM_PLAYERS; i++) {
+		for(int j = 0; j < MAX_ROUNDS; j++)
+			PlayersPlaceHist[i][j] = NOWHERE;
+	}
+	
+	// Process PastPlays String	
+	setGameView(gv, pastPlays);	
+
+	return gv;
+}
+
+void setGameView(GameView gv, char *pastPlays)
+{
+	assert(gv != NULL && pastPlays != NULL);
+		
+	int i;
+	int j = 0;
+	// Initialise move & abbrevations (abbre) arrays
+	for(i = 0; i < MOVE_SIZE; i++)
+		move[i] = '\0';
+	for(i = 0; i < ABBREVIATION_SIZE; i++)
+		abbre[i] = '\0';
+
+	// Setting moves & abbreviations (abbre) array
+	for(i = 0; pastPlays[i] != '\0'; i++) {
+		if(pastPlays[i] == ' ') {					
+			continue;
+		}
+		move[j] = pastPlays[i];
+		j++;
+		if(j == MOVE_SIZE - 1) {			
+			set_abbreviation(move, abbre);
+			set_playerInfo(gv, move, abbre);
+			// Reset arrays after use
+			reset_move_abbreviation(move, abbre);
+			j = 0;
+		}
+	}
+}
+
+static
+void set_playerInfo(GameView gv, char *move, char *abbre)
+{
+	if(gv->numRound == -1)
+		gv->numRound = 0;	
+	switch(move[0]) {
+	case 'G':
+		// if Health = 0 then increase health to full new Round
+		if(gv->hunters[0].health == 0)
+			restoreHHealth(gv, 0);
+		// fills the PlayersPlaceHist array	 
+		FillPlayerLocationArr(gv, 0, abbre);
+		// if rests then health +3
+		if(PlayersPlaceHist[0][gv->numRound - 1] == PlayersPlaceHist[0][gv->numRound])
+			restHunterspts(gv, 0);		
+		// Trap, Vampire, Dracula encounters handling
+		HunterEncounter(gv, 0, move);
+		break;
+	
+	case 'S':
+		if(gv->hunters[1].health == 0)
+			restoreHHealth(gv, 1);	
+		FillPlayerLocationArr(gv, 1, abbre);
+		if(PlayersPlaceHist[1][gv->numRound - 1] == PlayersPlaceHist[1][gv->numRound])
+			restHunterspts(gv, 1);
+		HunterEncounter(gv, 1, move);
+		break;
+
+	case 'H':
+		if(gv->hunters[2].health == 0)
+			restoreHHealth(gv, 2);		
+		FillPlayerLocationArr(gv, 2, abbre);
+		if(PlayersPlaceHist[2][gv->numRound - 1] == PlayersPlaceHist[2][gv->numRound])
+			restHunterspts(gv, 2);
+		HunterEncounter(gv, 2, move);		
+		break;
+
+	case 'M':
+		if(gv->hunters[3].health == 0)
+			restoreHHealth(gv, 3);	
+		FillPlayerLocationArr(gv, 3, abbre);
+		if(PlayersPlaceHist[3][gv->numRound - 1] == PlayersPlaceHist[3][gv->numRound])
+			restHunterspts(gv, 3);
+		HunterEncounter(gv, 3, move);		
+		break;
+
+	case 'D': ;
+		// If Dracula makes move to a real place
+		PlaceId p = placeAbbrevToId(abbre);
+		if(placeIsReal(p))
+			draculaRealPlace(gv, p, abbre);
+		// If Dracula makes move to non-Real place
+		else if(!placeIsReal(p))
+			draculaNotRealPlace(gv, p, abbre, move);
+		// check for trap and add to list if exists
+		PlaceDraculaEncounter(gv, move[3]);
+		PlaceDraculaEncounter(gv, move[4]);
+		PlaceDraculaAction(gv, move[5]);
+		// Increase round number and decrease gamescore at end of Dracula's turn
+		incrementRound(gv);
+		decrementGameScore(gv);
+		break;
+	
+	default:
+		printf("Not a Valid Player");
+		return;
+	}
+}
 
 static 
 void set_abbreviation(char *move, char *abbre)
@@ -96,20 +257,85 @@ void restHunterspts(GameView gv, int HunterIndex)
 	gv->hunters[HunterIndex].health = gv->hunters[HunterIndex].health > 5? GAME_START_HUNTER_LIFE_POINTS: gv->hunters[HunterIndex].health + LIFE_GAIN_REST;
 }
 
+static 
+void FillPlayerLocationArr(GameView gv, Player player, char *abbre)
+{
+	if(player >=0 && player <= 3) {
+		PlayersPlaceHist[player][gv->numRound] = placeAbbrevToId(abbre);
+		gv->hunters[player].moves[gv->numRound] = PlayersPlaceHist[player][gv->numRound];
+	}
+	else {
+		PlayersPlaceHist[player][gv->numRound] = placeAbbrevToId(abbre);
+		gv->dracula.moves[gv->numRound] = PlayersPlaceHist[player][gv->numRound];
+	}
+
+}
+
+static
+void HunterEncounter(GameView gv, int HunterIndex, char *move)
+{
+	for(int i = 3; i < MOVE_SIZE - 1; i++) {
+		if(move[i] == 'V')
+			removeTrail(gv, gv->dracula.locVamp, true);
+		else if(move[i] == 'T') {
+			// Destroy trap
+			gv->hunters[HunterIndex].health = gv->hunters[HunterIndex].health < 3? 0: gv->hunters[HunterIndex].health - LIFE_LOSS_TRAP_ENCOUNTER;
+			removeTrail(gv, PlayersPlaceHist[HunterIndex][gv->numRound], false);			
+			// If health == 0 Hunter cant do anything until next round			
+			if(gv->hunters[HunterIndex].health == 0) {
+				gv->hunters[HunterIndex].moves[gv->numRound] = ST_JOSEPH_AND_ST_MARY;
+				gv->GameScore -= 6;				
+				break;
+			}
+		}
+		else if(move[i] == 'D') {
+			gv->hunters[HunterIndex].health = gv->hunters[HunterIndex].health < 5? 0: gv->hunters[HunterIndex].health - LIFE_LOSS_DRACULA_ENCOUNTER;
+			gv->dracula.bloodpts = gv->dracula.bloodpts < 11? 0: gv->dracula.bloodpts - LIFE_LOSS_HUNTER_ENCOUNTER;				
+			if(gv->hunters[HunterIndex].health == 0) {
+				gv->hunters[HunterIndex].moves[gv->numRound] = ST_JOSEPH_AND_ST_MARY;
+				gv->GameScore -= 6;				
+				break;
+			}
+			else if(gv->dracula.bloodpts == 0)
+				break;
+		}		
+	}
+}
+
+static
+void PlaceDraculaEncounter(GameView gv, char encounter)
+{
+	if(encounter == 'T')
+		addTrail(gv, PlayersPlaceHist[4][gv->numRound], false); 
+	else if(encounter == 'V')
+		addTrail(gv, PlayersPlaceHist[4][gv->numRound], true);
+}
+
+static
+void PlaceDraculaAction(GameView gv, char action)
+{
+	if(action == 'M')
+		removeTrail(gv, gv->dracula.locVamp, false);
+	else if(action == 'V') {
+		VampireMatures(gv);
+		removeTrail(gv, gv->dracula.locVamp, true);
+	}
+}
+
 static
 void draculaRealPlace(GameView gv, PlaceId p, char *abbre)
 {
 	assert(gv != NULL && abbre != NULL);
 	if(!placeIsSea(p)) {
 		if(p != CASTLE_DRACULA)
-			PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
+			FillPlayerLocationArr(gv, 4, abbre);
 		else {
-			PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
+			FillPlayerLocationArr(gv, 4, abbre);
 			gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
 		}
 	}			
 	else {
-		PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
+		FillPlayerLocationArr(gv, 4, abbre);
 		gv->dracula.bloodpts -= 2;
 	}
 }
@@ -117,6 +343,8 @@ void draculaRealPlace(GameView gv, PlaceId p, char *abbre)
 static
 void draculaNotRealPlace(GameView gv, PlaceId p, char *abbre, char *move)
 {
+	assert(gv != NULL);
+
 	if(p == TELEPORT) {
 		PlayersPlaceHist[4][gv->numRound] = CASTLE_DRACULA;
 		gv->dracula.bloodpts += LIFE_GAIN_CASTLE_DRACULA;
@@ -141,61 +369,10 @@ void draculaNotRealPlace(GameView gv, PlaceId p, char *abbre, char *move)
 		PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
 		gv->dracula.bloodpts -= LIFE_LOSS_SEA;
 	}
-	else
+	else {
 		PlayersPlaceHist[4][gv->numRound] = placeAbbrevToId(abbre);
-}
-
-static
-void HunterEncounter(GameView gv, int HunterIndex, char *move)
-{
-	for(int i = 3; i < MOVE_SIZE - 1; i++) {
-		if(move[i] == 'V')
-			removeTrail(gv, gv->dracula.locVamp, true);
-		else if(move[i] == 'T') {
-			// Remember to destroy trap (DO LATER PLS)
-			gv->hunters[HunterIndex].health = gv->hunters[HunterIndex].health < 3? 0: gv->hunters[HunterIndex].health - LIFE_LOSS_TRAP_ENCOUNTER;
-			removeTrail(gv, PlayersPlaceHist[HunterIndex][gv->numRound], false);			
-			// If health == 0 cant do anything, hence break out of loop			
-			if(gv->hunters[HunterIndex].health == 0) {
-				gv->GameScore -= 6;				
-				break;
-			}
 		}
-		else if(move[i] == 'D') {
-			gv->hunters[HunterIndex].health = gv->hunters[HunterIndex].health < 5? 0: gv->hunters[HunterIndex].health - LIFE_LOSS_DRACULA_ENCOUNTER;
-			// Draculae health also reduces by 10
-			gv->dracula.bloodpts = gv->dracula.bloodpts < 11? 0: gv->dracula.bloodpts - LIFE_LOSS_HUNTER_ENCOUNTER;
-			// If health == 0 cant do anything or bloodpts == 0 gameover, so break out in both cases				
-			if(gv->hunters[HunterIndex].health == 0) {
-				PlayersPlaceHist[HunterIndex][gv->numRound] = ST_JOSEPH_AND_ST_MARY; 
-				gv->GameScore -= 6;				
-				break;
-			}
-			else if(gv->dracula.bloodpts == 0)
-				break;
-		}		
-	}
-}
-
-static
-void VampireMatures(GameView gv)
-{
-	assert(gv != NULL);
-	gv->GameScore -= 13;
-}
-
-static
-void incrementRound(GameView gv)
-{
-	assert(gv != NULL);
-	gv->numRound++;
-}
-
-static
-void decrementGameScore(GameView gv)
-{
-	assert(gv != NULL);
-	gv->GameScore -= SCORE_LOSS_DRACULA_TURN;
+	gv->dracula.moves[gv->numRound] = p;
 }
 
 static
@@ -236,150 +413,24 @@ void removeTrail(GameView gv, PlaceId loc, bool isVamp)
 }
 
 static
-void set_playerInfo(GameView gv, char *move, char *abbre)
+void VampireMatures(GameView gv)
 {
-	if(gv->numRound == -1)
-		gv->numRound = 0;	
-	switch(move[0]) {
-	case 'G':
-		// if Health = 0 then increase health to full new Round
-		if(gv->hunters[0].health == 0)
-			restoreHHealth(gv, 0);
-		// fills the PlayersPlaceHist array	
-		PlayersPlaceHist[0][gv->numRound] = placeAbbrevToId(abbre);
-		// if rests then health +3
-		if(PlayersPlaceHist[0][gv->numRound - 1] == PlayersPlaceHist[0][gv->numRound])
-			restHunterspts(gv, 0);		
-		// Trap, Vampire, Dracula encounters handling
-		HunterEncounter(gv, 0, move);
-		break;
-	
-	case 'S':
-		if(gv->hunters[1].health == 0)
-			restoreHHealth(gv, 1);	
-		PlayersPlaceHist[1][gv->numRound] = placeAbbrevToId(abbre);
-		if(PlayersPlaceHist[1][gv->numRound - 1] == PlayersPlaceHist[1][gv->numRound])
-			restHunterspts(gv, 1);
-		HunterEncounter(gv, 1, move);
-		break;
-
-	case 'H':
-		if(gv->hunters[2].health == 0)
-			restoreHHealth(gv, 2);		
-		PlayersPlaceHist[2][gv->numRound] = placeAbbrevToId(abbre);
-		if(PlayersPlaceHist[2][gv->numRound - 1] == PlayersPlaceHist[2][gv->numRound])
-			restHunterspts(gv, 2);
-		HunterEncounter(gv, 2, move);		
-		break;
-
-	case 'M':
-		if(gv->hunters[3].health == 0)
-			restoreHHealth(gv, 3);	
-		PlayersPlaceHist[3][gv->numRound] = placeAbbrevToId(abbre);
-		if(PlayersPlaceHist[3][gv->numRound - 1] == PlayersPlaceHist[3][gv->numRound])
-			restHunterspts(gv, 3);
-		HunterEncounter(gv, 3, move);		
-		break;
-
-	case 'D': ;
-		// If Dracula makes move to a real place
-		PlaceId p = placeAbbrevToId(abbre);
-		if(placeIsReal(p))
-			draculaRealPlace(gv, p, abbre);
-		// If Dracula makes move to non-Real place
-		else if(!placeIsReal(p)) {
-			draculaNotRealPlace(gv, p, abbre, move);
-		}  
-		// check for trap and add to list if exists
-		if(move[3] == 'T')
-			addTrail(gv, PlayersPlaceHist[4][gv->numRound], false);
-		// check and add Vampire Location if exist 
-		if(move[4] == 'V')
-			addTrail(gv, PlayersPlaceHist[4][gv->numRound], true);
-		// Handling Vampire Mature
-		if(move[5] == 'V') {
-			VampireMatures(gv);
-			removeTrail(gv, gv->dracula.locVamp, true);
-		}
-		// Increase round number and decrease gamescore at end of Dracula's turn
-		incrementRound(gv);
-		decrementGameScore(gv);
-		break;
-	
-	default:
-		printf("Not a Valid Player");
-		return;
-	}
-	
+	assert(gv != NULL);
+	gv->GameScore -= 13;
 }
 
-void setGameView(GameView gv, char *pastPlays)
+static
+void incrementRound(GameView gv)
 {
-	assert(gv != NULL && pastPlays != NULL);
-		
-	int i;
-	int j = 0;
-	// set move and abbre arrays to null terminators
-	for(i = 0; i < MOVE_SIZE; i++)
-		move[i] = '\0';
-	for(i = 0; i < ABBREVIATION_SIZE; i++)
-		abbre[i] = '\0';
-	// Reading the pastPlays string and recording
-	for(i = 0; pastPlays[i] != '\0'; i++) {
-		if(pastPlays[i] == ' ') {					
-			continue;
-		}
-		move[j] = pastPlays[i];
-		j++;
-		if(j == MOVE_SIZE - 1) {			
-			set_abbreviation(move, abbre);
-			// set array of moves of a player
-			set_playerInfo(gv, move, abbre);
-			// Reset arrays to null
-			reset_move_abbreviation(move, abbre);
-			j = 0;
-		}
-	}
+	assert(gv != NULL);
+	gv->numRound++;
 }
 
-////////////////////////////////////////////////////////////////////////
-// Constructor/Destructor
-
-GameView GvNew(char *pastPlays, Message messages[])
+static
+void decrementGameScore(GameView gv)
 {
-	GameView gv = malloc(sizeof(*gv));
-	if (gv == NULL) {
-		fprintf(stderr, "Couldn't allocate GameView!\n");
-		exit(EXIT_FAILURE);
-	}
-	gv->graph = MapNew();
-	gv->GameScore = GAME_START_SCORE;
-	gv->numRound = -1;
-	gv->dracula.ntrail = 0;
-	// initialising points for players
-	int i;	
-	gv->dracula.bloodpts = GAME_START_BLOOD_POINTS;
-	for(i = 0; i < (NUM_PLAYERS - 1); i++)
-		gv->hunters[i].health = GAME_START_HUNTER_LIFE_POINTS;	
-	// setting up Players Place History Dynamic Array
-	PlayersPlaceHist = malloc(sizeof(PlaceId *) * NUM_PLAYERS);
-	assert(PlayersPlaceHist != NULL);
-	for(i = 0; i < NUM_PLAYERS; i++) {
-		PlayersPlaceHist[i] = malloc(sizeof(PlaceId) * MAX_ROUNDS);
-		assert(PlayersPlaceHist[i] != NULL);
-	}
-	// Setting all the Past moves to NoWhere initially
-	for(i = 0; i < NUM_PLAYERS; i++) {
-		for(int j = 0; j < MAX_ROUNDS; j++)
-			PlayersPlaceHist[i][j] = NOWHERE;
-	}
-	// Set locVamp
-	gv->dracula.locVamp = NOWHERE;
-	
-	// loop through pastPlays and edit round Numbers and all the info inside players	
-	setGameView(gv, pastPlays);	
-
-	return gv;
+	assert(gv != NULL);
+	gv->GameScore -= SCORE_LOSS_DRACULA_TURN;
 }
 
 void GvFree(GameView gv)
@@ -397,8 +448,14 @@ Round GvGetRound(GameView gv)
 
 Player GvGetPlayer(GameView gv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return PLAYER_LORD_GODALMING;
+	assert(gv != NULL);
+	int pNum;
+	for(pNum = 0; pNum < NUM_PLAYERS; pNum++) {
+		if(PlayersPlaceHist[pNum][gv->numRound] == NOWHERE)
+			break;
+	}
+
+	return pNum;
 }
 
 int GvGetScore(GameView gv)
@@ -419,11 +476,16 @@ PlaceId GvGetPlayerLocation(GameView gv, Player player)
 {
 	assert(gv != NULL);
 
-	if(PlayersPlaceHist[player][gv->numRound] != NOWHERE)
+	if(PlayersPlaceHist[player][gv->numRound] != NOWHERE) {
+		if(gv->hunters[player].moves[gv->numRound] == ST_JOSEPH_AND_ST_MARY)
+			return ST_JOSEPH_AND_ST_MARY;
 		return PlayersPlaceHist[player][gv->numRound];
-	else if((gv->numRound - 1) >= 0)
+	}
+	else if((gv->numRound - 1) >= 0) {
+		if(gv->hunters[player].moves[gv->numRound -1] == ST_JOSEPH_AND_ST_MARY)
+			return ST_JOSEPH_AND_ST_MARY;
 		return PlayersPlaceHist[player][gv->numRound - 1];
-	
+	}
 	return NOWHERE;
 }
 
@@ -433,16 +495,15 @@ PlaceId GvGetVampireLocation(GameView gv)
 	return gv->dracula.locVamp;
 }
 
-PlaceId *trap;
-// trap global variable passed here
 PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 {
 	assert(gv != NULL);	
 
 	trap = malloc(sizeof(PlaceId) * TRAIL_SIZE);
 	int counter = 0;
-	// if gv->dracula.locVamp != NOWHERE then remove from ntrails
 	int vampInTrail;
+
+	// remove Vampire from trail if exists
 	if(gv->dracula.locVamp != NOWHERE)
 		vampInTrail = 1;
 	else
@@ -463,9 +524,99 @@ PlaceId *GvGetTrapLocations(GameView gv, int *numTraps)
 
 ////////////////////////////////////////////////////////////////////////
 // Game History
-
 PlaceId *GvGetMoveHistory(GameView gv, Player player,
                           int *numReturnedMoves, bool *canFree)
+{
+	// Create a dynamically allocated array of size MAX_ROUND
+	moveHistory = malloc(sizeof(PlaceId) *MAX_ROUNDS);
+	assert(moveHistory != NULL);
+	for(int i = 0; i < MAX_ROUNDS; i++)
+		moveHistory[i] = NOWHERE;
+	
+	// Setting up MoveHistory array for PLAYER_DRACULA
+	int i;
+	if(player == PLAYER_DRACULA) {
+		for(i = 0; i < MAX_ROUNDS; i++) {
+			if(gv->dracula.moves[i] == NOWHERE) {
+				break;
+			}
+			moveHistory[i] = gv->dracula.moves[i];
+		}
+	}
+
+	// Setting up MoveHistory array for HUNTERS
+	else {	
+		for(i = 0; i < MAX_ROUNDS; i++) {
+			if(gv->hunters[player].moves[i] == NOWHERE)
+					break;
+			if(gv->hunters[player].moves[i] == ST_JOSEPH_AND_ST_MARY) {
+				moveHistory[i] = PlayersPlaceHist[player][i];
+				continue;
+			}
+			moveHistory[i] = gv->hunters[player].moves[i];
+		}
+	}
+
+	*numReturnedMoves = i;
+	*canFree = true;
+	return moveHistory;
+}
+
+static
+int *findnumReturnedMoves(GameView gv, Player player, int numMoves, int *numReturnedMoves)
+{
+	// Finding numReturnedMoves
+	if(numMoves <= gv->numRound)
+		*numReturnedMoves = numMoves;
+
+	else if(numMoves > gv->numRound) {
+		if((player >= 0 && player <= 3) && (gv->dracula.moves[gv->numRound] == NOWHERE))
+			*numReturnedMoves = gv->numRound + 1;
+		else {
+			*numReturnedMoves = gv->numRound;
+		}
+	}
+	return numReturnedMoves;
+}
+
+PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
+                        int *numReturnedMoves, bool *canFree)
+{
+	assert(gv != NULL);
+
+	// Finds numReturnedMoves
+	numReturnedMoves = findnumReturnedMoves(gv, player, numMoves, numReturnedMoves);
+	moveHistory = malloc(sizeof(PlaceId) * (*numReturnedMoves));
+	assert(moveHistory != NULL);
+	for(int i = 0; i < *numReturnedMoves; i++)
+		moveHistory[i] = NOWHERE;
+	int lastElem = ((player >= 0 && player <= 3) && (gv->dracula.moves[gv->numRound] == NOWHERE))? gv->numRound: gv->numRound-1;
+
+	// Setting up lastMoves array for PLAYER_DRACULA
+	int i;
+	if(player == PLAYER_DRACULA) {
+		for(i = *numReturnedMoves - 1; i >= 0 && lastElem >= 0; i--) {
+			moveHistory[i] = gv->dracula.moves[lastElem];		
+			lastElem--;
+		}
+	}
+	// Setting up lastMoves array for HUNTERS
+	else {
+		for(i = *numReturnedMoves - 1; i >= 0 && lastElem >= 0; i--) {
+			if(gv->hunters[player].moves[lastElem] == ST_JOSEPH_AND_ST_MARY)
+				moveHistory[i] = PlayersPlaceHist[player][lastElem];
+			else
+				moveHistory[i] = gv->hunters[player].moves[lastElem];				
+			lastElem--;
+		}
+	}
+
+	*canFree = true;
+	return moveHistory;
+}
+
+PlaceId *GvGetLocationHistory(GameView gv, Player player,
+                              int *numReturnedLocs, bool *canFree)
 {
 	assert(gv != NULL);
 	
@@ -474,109 +625,302 @@ PlaceId *GvGetMoveHistory(GameView gv, Player player,
 		if(PlayersPlaceHist[player][i] == NOWHERE)
 			break;
 	}
-	*numReturnedMoves = i;
+	*numReturnedLocs = i;
 	*canFree = true;
 	return PlayersPlaceHist[player];
-}
-// FIX BUG HERE
-PlaceId *GvGetLastMoves(GameView gv, Player player, int numMoves,
-                        int *numReturnedMoves, bool *canFree)
-{
-	assert(gv != NULL);
-	
-	if((gv->numRound + 1) >= numMoves) {
-		*numReturnedMoves = numMoves;
-		*canFree = true;
-		int newLocHead = (gv->numRound + 1) - numMoves;
-		return &PlayersPlaceHist[player][newLocHead];
-	}
-
-	*numReturnedMoves = (gv->numRound + 1);
-	*canFree = true;
-	return PlayersPlaceHist[player];
-}
-
-PlaceId *GvGetLocationHistory(GameView gv, Player player,
-                              int *numReturnedLocs, bool *canFree)
-{
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	*canFree = false;
-	return NULL;
 }
 
 PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
                             int *numReturnedLocs, bool *canFree)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	*canFree = false;
-	return 0;
+	assert(gv != NULL);
+	
+	if((gv->numRound) >= numLocs) {
+		*numReturnedLocs = numLocs;
+		*canFree = true;
+		int newLocHead = (player >=0 && player <= 3) && (PlayersPlaceHist[4][gv->numRound] == NOWHERE)? (gv->numRound+1-numLocs):(gv->numRound-numLocs);
+		return &PlayersPlaceHist[player][newLocHead];
+	}
+	*numReturnedLocs = (player >=0 && player <= 3) && (PlayersPlaceHist[4][gv->numRound] == NOWHERE)? (gv->numRound+1): gv->numRound;
+	*canFree = true;
+	return PlayersPlaceHist[player];
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Making a Move
 
+static 
+int distanceRail(int roundNum, Player player)
+{
+	int sum = roundNum + player;
+	if(sum % 4 == 0)
+		return 0;
+	if(sum % 4 == 1)
+		return 1;
+	if(sum % 4 == 2)
+		return 2;
+	return 3;
+}
+
+
+static
+void makeVisited(PlaceId from)
+{
+	int i;
+	for(i = 0; i < MAX_RAIL_CONNECTIONS; i++) {
+		if(visited[i] == NOWHERE)
+			break;	
+	}
+	visited[i] = from;
+}
+
+
+static 
+int checkVisited(PlaceId from)
+{	
+	int i;
+	for(i = 0; i < MAX_RAIL_CONNECTIONS; i++) {
+		if(visited[i] == from)
+			return 1;
+	}
+	return 0;
+}
+
+static
+int InArray(PlaceId p)
+{
+	int i;
+	for(i = 0; i < MAX_CONNECTION; i++) {
+		if(connectionArr[i] == p)
+			return 1;
+	}
+	return 0;
+}
+
+static
+int wrapper(GameView gv, PlaceId from, int RailMoves, int pos)
+{
+	if(!InArray(from)) {
+		connectionArr[pos] = from;
+		printf("%s\n", placeIdToName(connectionArr[pos]));
+		makeVisited(from);
+		pos++;
+	}
+
+	if(RailMoves == 1) {	
+		return pos;
+	}
+
+	ConnList w = MapGetConnections(gv->graph, from);
+	while(w != NULL) {
+		if(w->type != RAIL) {
+			w = w->next;
+			continue;
+		}	
+		if(checkVisited(w->p)) {
+			w = w->next;		
+			continue;
+		}
+		pos = wrapper(gv, w->p, RailMoves-1, pos);
+		w = w->next;
+	}
+	return pos;
+}
+
+// returns total number of connections added
+static
+int addRailConn(GameView gv, PlaceId from, int RailMoves, int pos)
+{
+	// store place id
+	visited = malloc(sizeof(PlaceId) * MAX_RAIL_CONNECTIONS);
+	for(int i = 0; i < MAX_RAIL_CONNECTIONS; i++)
+		visited[i] = NOWHERE;
+	//makeVisited(connectionArr[0]);
+	pos = wrapper(gv, from, RailMoves, pos);
+	free(visited);
+
+	return pos;
+}
+
+// addRailConn
+// adds from the array
+// creates visited array. from to visited array puts.
+// for loop to see neights of from. If rail connection found and not visited, railMoves-- as parameter
+// at top, adds to array the first neighbour rail connection. checks if railMoves == 0 return;
+// If returns, means railMoves == 1 and checks all other rail connections of main src and adds to array similarly and ends
+// else add 1st rail conn of src main to array and marks as visited. Now checks all its neighbours i.e. 2nd rail connection from src
+// if not visited and rail connection then recursive call with railMoves--;
+
+
 PlaceId *GvGetReachable(GameView gv, Player player, Round round,
                         PlaceId from, int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
+	assert(gv != NULL);
+
+	connectionArr = malloc(sizeof(PlaceId) * MAX_CONNECTION);
+	int i; int j = 1;	
+	for(i = 0; i < MAX_CONNECTION; i++)
+		connectionArr[i] = NOWHERE;
+
+	connectionArr[0] = from;
+	printf("%s\n", placeIdToName(connectionArr[0]));
+	ConnList c = MapGetConnections(gv->graph, connectionArr[0]);
+		
+	if(player == 4) {
+		//printf("%s\n", placeIdToName(connectionArr[0]));
+		while(c != NULL) {
+			if(c->type == RAIL) {
+				c = c->next;
+				continue;
+			}
+			if(c->p == ST_JOSEPH_AND_ST_MARY) {
+				c = c->next;
+				continue;
+			}
+			connectionArr[j] = c->p;
+			//printf("%s\n", placeIdToName(connectionArr[j]));
+			j++;
+			c = c->next;
+		}
+	}
+
+	else {
+		int RailMoves = distanceRail(round, player); 
+		while(c != NULL) {
+			if(c->type == RAIL) {
+				if(RailMoves > 0) {
+					j = addRailConn(gv, c->p, RailMoves, j);
+				}
+				// if RailMoves == 0 then nothing to add and j = 1 right place to insert for next time
+				else {
+				c = c->next;
+				continue;
+				}
+			}
+			else if(!InArray(c->p)){
+				connectionArr[j] = c->p;
+				printf("%s\n", placeIdToName(connectionArr[j]));
+				//printf("%s\n", placeIdToName(connectionArr[j]));
+				j++;
+			}
+			c = c->next;
+		}
+	}
+		// Check if rail connection then call add to railconn
+		// takes RailMoves as important parameter
+		
+		// otherwise simply adds
+
+	*numReturnedLocs = j;
+	return connectionArr;
+}
+
+// Add Road Connection to the Array
+static
+void addRoadConnection(PlaceId p, int pos)
+{
+	connectionArr[pos] = p;
+}
+
+// Add Boat Connection to the Array
+static
+void addBoatConnection(PlaceId p, int pos)
+{
+	connectionArr[pos] = p;
 }
 
 PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
                               PlaceId from, bool road, bool rail,
                               bool boat, int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
+	assert(gv != NULL);
+
+	connectionArr = malloc(sizeof(PlaceId) * MAX_CONNECTION);
+	int i; int j = 1;	
+	for(i = 0; i < MAX_CONNECTION; i++)
+		connectionArr[i] = NOWHERE;
+
+	connectionArr[0] = from;
+	printf("%s\n", placeIdToName(connectionArr[0]));
+	ConnList c = MapGetConnections(gv->graph, connectionArr[0]);
+		
+	if(player == 4) {
+		//printf("%s\n", placeIdToName(connectionArr[0]));
+		while(c != NULL) {
+			if(c->type == RAIL) {
+				c = c->next;
+				continue;
+			}
+			if(c->p == ST_JOSEPH_AND_ST_MARY) {
+				c = c->next;
+				continue;
+			}
+			if(road) {
+				addRoadConnection(c->p, j);
+				j++;		
+			}
+
+			else if(boat) {
+				addBoatConnection(c->p, j);
+				j++;	
+			}
+			//printf("%s\n", placeIdToName(connectionArr[j]));
+			c = c->next;
+		}
+	}
+
+	else {
+		int RailMoves = distanceRail(round, player); 
+		while(c != NULL) {
+			if(rail) {
+				if(c->type == RAIL) {
+					if(RailMoves > 0) {
+						j = addRailConn(gv, c->p, RailMoves, j);
+					}
+					// if RailMoves == 0 then nothing to add and j = 1 right place to insert for next time
+					else {
+					c = c->next;
+					continue;
+					}
+				}
+			}
+			else if(!InArray(c->p)){
+				if(road) {
+					addRoadConnection(c->p, j);
+					j++;
+				}
+				else if(boat) {
+					addBoatConnection(c->p, j);
+					j++;
+				}
+					//printf("%s\n", placeIdToName(connectionArr[j]));
+					//printf("%s\n", placeIdToName(connectionArr[j]));
+			}
+			c = c->next;
+		}
+	}
+		// Check if rail connection then call add to railconn
+		// takes RailMoves as important parameter
+		
+		// otherwise simply adds
+
+	*numReturnedLocs = j;
+	return connectionArr;
 }
 
 void white_box() {
 	
-	char *pastPlays =  "GGE.... SGE.... HGE.... MGE.... DCD.V.. GGE.... SGE.... HGE.... MGE.... DD1T...";
-	//setNode(pastPlays);
+	char *pastPlays =	"GGE.... SGE.... HGE.... MGE.... DC?.V.. GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T.V.";
 	//printf("%d %d %d %d %d %d\n",placeAbbrevToId("MN"), placeAbbrevToId("PL"), placeAbbrevToId("AM"), placeAbbrevToId("PA"), placeAbbrevToId("CD"), placeAbbrevToId("LV"));
-	GameView gv = GvNew(pastPlays, NULL); 
+	GameView gv = GvNew(pastPlays, NULL);
 	
 	int *numReturnedLocs = malloc(sizeof(int));
-	bool *canFree = malloc(sizeof(bool));
-	GvGetLastMoves(gv, PLAYER_DR_SEWARD, 3,numReturnedLocs, canFree);
-	int i;
-	for(i = 0; i < *numReturnedLocs; i++){
-		printf("%d", *numReturnedLocs);
-		printf("%s ", placeIdToName(PlayersPlaceHist[PLAYER_DR_SEWARD][i]));
-	}
+	PlaceId *c = GvGetReachableByType(gv, PLAYER_LORD_GODALMING, 3, PARIS, false, false, false, numReturnedLocs);
+	printf("%d\n", *numReturnedLocs);
+
+	//printf("%s\n", placeIdToName(connectionArr[0]));
 
 
-	//printf("%d\n", gv->numRound);
-//	printf("%d\n", GvGetHealth(gv, PLAYER_DR_SEWARD));
-		
-	//printf("%s\n", placeIdToName(PlayersPlaceHist[1][gv->numRound-1]));
-	//printf("%s\n", placeIdToName(PlayersPlaceHist[2][gv->numRound-1]));
-	//printf("%s\n", placeIdToName(PlayersPlaceHist[3][gv->numRound-1]));
-	//printf("%d\n", gv->hunters[0].health);
-	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, PLAYER_DRACULA)));			
-	//printf("%s\n", placeIdToName(GvGetVampireLocation(gv)));
-	//printf("%d\n", gv->dracula.bloodpts);
-	//int *numTraps = malloc(sizeof(int));
-	//GvGetTrapLocations(gv, numTraps);
-	//printf("%d\n", *numTraps);
-	//printf("%s %s\n", placeIdToName(trap[0]), placeIdToName(trap[1]));
-	//printf("%s\n", placeIdToName(PlayersPlaceHist[0][gv->numRound]));
-	//printf("%s\n", placeIdToName(PlayersPlaceHist[4][gv->numRound-2]));	
-	//printf("%s\n", placeIdToName(gv->dracula.locVamp));
-	//printf("%s %s\n", placeIdToName(gv->dracula.trail[2]), placeIdToName(gv->dracula.trail[1]));
-	//printf("%s\n", placeIdToName(PlayersPlaceHist[0][gv->numRound+1]));
-
-	//printf("%d", placeAbbrevToId("HI"));
-	//PlaceId p= placeAbbrevToId("HI");
-	//printf("%d\n", p);*/
 }
 
-////////////////////////////////////////////////////////////////////////
-// Your own interface functions
 
-// TODO
