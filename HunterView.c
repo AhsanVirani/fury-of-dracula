@@ -107,10 +107,31 @@ PlaceId HvGetVampireLocation(HunterView hv)
 PlaceId HvGetLastKnownDraculaLocation(HunterView hv, Round *round)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-
 	*round = 0;
+	int result;
+	int count = -1;
+	bool locBool;
+	PlaceId *placeResult = GvGetLastLocations(hv->gView, PLAYER_DRACULA, 5, &result, &locBool);
+	PlaceId finalPlace = NOWHERE;
+
+	for (int i = 0; i < result; i++) {
+		printf("the result is %d\n", placeResult[i]);
+		
+		if (placeResult[i] != CITY_UNKNOWN) {
+			finalPlace = placeResult[i];
+			count++;
+		}	
+	}
+
+	if (placeResult == NULL)
+		printf("NULL ENCOUNTERED!!!\n");
+
+		if (count > 0)
+			*round = count;
 	
-	return HvGetVampireLocation(hv);
+	return finalPlace;
+	// return NOWHERE;
+
 }
 
 PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
