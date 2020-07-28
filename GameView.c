@@ -465,7 +465,7 @@ Player GvGetPlayer(GameView gv)
 		if(PlayersPlaceHist[pNum][gv->numRound] == NOWHERE)
 			break;
 	}
-
+	
 	return pNum;
 }
 
