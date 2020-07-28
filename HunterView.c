@@ -25,6 +25,8 @@
 
 struct hunterView {
 	// TODO: ADD FIELDS HERE
+	//DONE
+	GameView gView;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -39,12 +41,16 @@ HunterView HvNew(char *pastPlays, Message messages[])
 		exit(EXIT_FAILURE);
 	}
 
+	new->gView = GvNew(pastPlays, messages);
+
 	return new;
 }
 
 void HvFree(HunterView hv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	//DONE
+	GvFree(hv->gView);
 	free(hv);
 }
 
@@ -54,37 +60,45 @@ void HvFree(HunterView hv)
 Round HvGetRound(HunterView hv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	//DONE
+	return GvGetRound(hv->gView);
 }
 
 Player HvGetPlayer(HunterView hv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return PLAYER_LORD_GODALMING;
+	// DONE
+	return GvGetPlayer(hv->gView);
+	
 }
 
 int HvGetScore(HunterView hv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	// DONE	
+	return GvGetScore(hv->gView);
 }
 
 int HvGetHealth(HunterView hv, Player player)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	//DONE
+	return GvGetHealth(hv->gView, player);
 }
 
 PlaceId HvGetPlayerLocation(HunterView hv, Player player)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return NOWHERE;
+	//DONE
+	return GvGetPlayerLocation(hv->gView, player);
+	
 }
 
 PlaceId HvGetVampireLocation(HunterView hv)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return NOWHERE;
+	// DONE
+	return GvGetVampireLocation(hv->gView);
 }
 
 ////////////////////////////////////////////////////////////////////////
