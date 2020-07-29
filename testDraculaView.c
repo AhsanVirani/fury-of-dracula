@@ -209,6 +209,43 @@ int main(void)
     DvFree(dv);
     green();
     printf("Test passed!\n");
+    resetColour();
+    }
+
+    {///////////////////////////////////////////////////////////////////
+    printf("Test for when DB is valid but HIDE is invalid (already used)\n");
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
+        "GGE.... SGE.... HGE.... MGE.... DHIT... "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[9] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 3);
+    sortPlaces(moves, num);
+    assert(moves[0] == GALATZ);
+    assert(moves[1] == KLAUSENBURG);
+    assert(moves[2] == DOUBLE_BACK_1);
+    free(moves);
+
+    // DvWhereCanIGo
+
+    PlaceId *locations = DvGetValidMoves(dv, &num);
+    printf("hit\n");
+    assert(num == 3);
+    sortPlaces(locations, num);
+    assert(locations[0] == CASTLE_DRACULA);
+    assert(locations[1] == GALATZ);
+    assert(locations[2] == KLAUSENBURG);
+    free(locations);
+
+    DvFree(dv);
+    green();
+    printf("Test passed!\n");
     }
 
 	return EXIT_SUCCESS;
