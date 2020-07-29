@@ -191,7 +191,7 @@ PlaceId *HvWhereCanIGo(HunterView hv, int *numReturnedLocs)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	// *numReturnedLocs = 0;
-	return HvWhereCanIGoByType(hv, true, true, true, numReturnedLocs);
+	return HvWhereCanIGoByType(hv,true,true,true,numReturnedLocs);
 	
 }
 
@@ -199,20 +199,18 @@ PlaceId *HvWhereCanIGoByType(HunterView hv, bool road, bool rail,
                              bool boat, int *numReturnedLocs)
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	Player currPlayer = GvGetPlayer(hv->gView);
-	PlaceId currLoc = GvGetPlayerLocation(hv->gView,currPlayer);
-	Round round = GvGetRound(hv->gView);
+	*numReturnedLocs = 0;
 	
-	if (currLoc == NOWHERE) {
-		*numReturnedLocs = 0;
+	Player hunter = GvGetPlayer(hv->gView);
+	PlaceId currentLocation = GvGetPlayerLocation(hv->gView, hunter); 
+	if (currentLocation == NOWHERE) {
 		return NULL;
-	}
-	PlaceId *results = GvGetReachableByType(hv->gView,currPlayer, round, 
-											currLoc, road, rail, boat,
-											numReturnedLocs);
+	}	
+	Round round = GvGetRound(hv->gView);
 
-	// *numReturnedLocs = 0;
-	return results;
+	PlaceId *result = GvGetReachableByType(hv->gView,hunter,round,currentLocation, road,rail,boat,numReturnedLocs);
+
+	return result;
 }
 
 PlaceId *HvWhereCanTheyGo(HunterView hv, Player player,
@@ -220,40 +218,36 @@ PlaceId *HvWhereCanTheyGo(HunterView hv, Player player,
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	// *numReturnedLocs = 0;
-	return HvWhereCanIGoByType(hv, true, true, true, numReturnedLocs);
+	return HvWhereCanTheyGoByType(hv,player, true,true,true,numReturnedLocs);
 }
 
 PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
                                 bool road, bool rail, bool boat,
                                 int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	
+	
+	*numReturnedLocs = 0;
+	PlaceId currentLocation = GvGetPlayerLocation(hv->gView, player);
 
-	PlaceId currLoc = GvGetPlayerLocation(hv->gView, player);
-	if (currLoc == NOWHERE) {
-		*numReturnedLocs = 0;
+	if (currentLocation == NOWHERE) {
 		return NULL;
 	}
+	PlaceId *results;
+
 	Round round = GvGetRound(hv->gView);
-	PlaceId *results = GvGetReachableByType(hv->gView,player, round, 
-											currLoc, road, rail, boat,
-											numReturnedLocs);
+	round++;
+	if (player != PLAYER_DRACULA) {
+		results = GvGetReachableByType(hv->gView,player,round,currentLocation, road,rail,boat,numReturnedLocs);
+	} else {
+		results = GvGetReachableByType(hv->gView,player,round,currentLocation, road,false,boat,numReturnedLocs);
+	}
 
 
-	// *numReturnedLocs = 0;
 	return results;
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
-// PlaceId *findShortestPath(HunterView hv, Player hunter, Round round, PlaceId start, PlaceId dest) {
-// 	PlaceId *visited;
-// 	visited[0] = start;
-// 	int i = 0;
-// 	PlaceId *p;
-
-// }
-
-
 
 // TODO
