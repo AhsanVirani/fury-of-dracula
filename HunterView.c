@@ -19,6 +19,21 @@
 #include "HunterView.h"
 #include "Map.h"
 #include "Places.h"
+
+#define MAX 70
+
+int intArray[MAX];
+int front = 0;
+int rear = -1;
+int itemCount = 0;
+
+int peek();
+bool isEmpty(); 
+bool isFull(); 
+int size();
+void insert(int data);
+int removeData();
+
 // add your own #includes here
 
 // TODO: ADD YOUR OWN STRUCTS HERE
@@ -133,6 +148,76 @@ PlaceId HvGetLastKnownDraculaLocation(HunterView hv, Round *round)
 PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
                              int *pathLength)
 {
+    GameView gV = hv->gView;
+    Round turn = GvGetRound(gV);              
+    PlaceId current = GvGetPlayerLocation(gV, hunter);
+    //printf("%d\n", turn);
+    //printf("%d\n", current);
+    
+    int numReturn;
+        
+    PlaceId *movePoss = GvGetReachable(gV, hunter, turn, current, &numReturn);  // this function only outputs madrid and itself as reachable places from lisbon and not 3 others (two neighbouring cities and the sea)
+                       
+    //printf("%d\n", movePoss[0]);                
+    printf("%d\n", numReturn);
+    
+    int count = 0;
+    while(count < numReturn){
+        printf("%d\n", movePoss[count]);
+        count++;
+    }  
+    
+    // implementing Dijkstra's algorithm 
+    int distance[MAX];
+    count = 0;
+    while(count < MAX){
+        distance[count] = 10000;
+        count++;
+    }
+    distance[current] = 0;
+    printf("%d\n", distance[current]);
+    
+    count = 0;
+    int prev[MAX];
+    while(count < MAX){
+        prev[count] = -1;
+        count++;
+    }
+    printf("%d\n", prev[current]);
+    
+    /*insert(3);            //testing if the queue works
+    insert(5);
+    
+    int num = removeData();
+    printf("%d\n", num);
+    
+    num = removeData();
+    printf("%d\n", num);*/
+    
+    insert(current);
+    while(!isEmpty()) {    
+        int n = removeData();           
+        printf("%d\n",n);
+        count = 0;
+        PlaceId *moveNeighbours = GvGetReachable(gV, hunter, turn, n, &numReturn);
+        while(count < numReturn){
+            //distance[n] 
+            PlaceId neighbour = moveNeighbours[count];
+            printf("%d\n", neighbour);
+            if (distance[n] + 1 < distance[neighbour]){            
+                distance[neighbour] =  distance[n] + 1;
+                prev[neighbour] = n;
+                insert(neighbour);
+            }            
+            count++;
+        }
+    }
+    // some pseudocode for the remaining part
+    // the dist array, and the prev array all filled out
+    // use the prev array to find the path from source to anywhere.  
+    // Distance from source to destination = dist[dest]
+	
+	
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 
 	// PlaceId start = GvGetPlayerLocation(hv->gView, hunter);
@@ -251,3 +336,43 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
 // Your own interface functions
 
 // TODO
+
+int peek() {
+   return intArray[front];
+}
+
+bool isEmpty() {
+   return itemCount == 0;
+}
+
+bool isFull() {
+   return itemCount == MAX;
+}
+
+int size() {
+   return itemCount;
+}  
+
+void insert(int data) {
+
+   if(!isFull()) {
+	
+      if(rear == MAX-1) {
+         rear = -1;            
+      }       
+
+      intArray[++rear] = data;
+      itemCount++;
+   }
+}
+
+int removeData() {
+   int data = intArray[front++];
+	
+   if(front == MAX) {
+      front = 0;
+   }
+	
+   itemCount--;
+   return data;  
+}
