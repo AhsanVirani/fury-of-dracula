@@ -201,16 +201,17 @@ PlaceId *HvWhereCanIGoByType(HunterView hv, bool road, bool rail,
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	Player currPlayer = GvGetPlayer(hv->gView);
 	PlaceId currLoc = GvGetPlayerLocation(hv->gView,currPlayer);
+
 	Round round = GvGetRound(hv->gView);
 	
 	if (currLoc == NOWHERE) {
 		*numReturnedLocs = 0;
 		return NULL;
 	}
+
 	PlaceId *results = GvGetReachableByType(hv->gView,currPlayer, round, 
 											currLoc, road, rail, boat,
 											numReturnedLocs);
-
 	// *numReturnedLocs = 0;
 	return results;
 }
@@ -220,25 +221,29 @@ PlaceId *HvWhereCanTheyGo(HunterView hv, Player player,
 {
 	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	// *numReturnedLocs = 0;
-	return HvWhereCanIGoByType(hv, true, true, true, numReturnedLocs);
+	return HvWhereCanTheyGoByType(hv,player,true,true,true,numReturnedLocs);
 }
 
 PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
                                 bool road, bool rail, bool boat,
                                 int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-
+	
+	PlaceId *results;
 	PlaceId currLoc = GvGetPlayerLocation(hv->gView, player);
-	if (currLoc == NOWHERE) {
-		*numReturnedLocs = 0;
+	Round round = GvGetRound(hv->gView);
+
+	if (currLoc == NOWHERE){
+		numReturnedLocs = 0;
 		return NULL;
 	}
-	Round round = GvGetRound(hv->gView);
-	PlaceId *results = GvGetReachableByType(hv->gView,player, round, 
-											currLoc, road, rail, boat,
-											numReturnedLocs);
-
+	if (player != PLAYER_DRACULA) { // i.e. is hunter
+		results = GvGetReachableByType(hv->gView,player,round,currLoc,road,rail,boat,numReturnedLocs);
+		// results = HvWhereCanIGoByType(hv,road,rail,boat,numReturnedLocs);
+	} else { // player is drac
+		rail = false;
+		results = GvGetReachableByType(hv->gView,player,round,currLoc,road,rail,boat,numReturnedLocs);
+	}
 
 	// *numReturnedLocs = 0;
 	return results;
@@ -246,14 +251,5 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
 
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
-// PlaceId *findShortestPath(HunterView hv, Player hunter, Round round, PlaceId start, PlaceId dest) {
-// 	PlaceId *visited;
-// 	visited[0] = start;
-// 	int i = 0;
-// 	PlaceId *p;
-
-// }
-
-
 
 // TODO
