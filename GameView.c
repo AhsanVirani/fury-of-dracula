@@ -823,17 +823,17 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	else {
 		int RailMoves = distanceRail(round, player); 
 		while(c != NULL) {
-			if(rail) {
-				if(c->type == RAIL) {
-					if(RailMoves > 0) {
-						j = addRailConnection_wrapper(gv, c->p, RailMoves, j);
-					}
-					else {
-					c = c->next;
-					continue;
-					}
+		
+			if(c->type == RAIL && rail) {
+				if(RailMoves > 0) {
+					j = addRailConnection_wrapper(gv, c->p, RailMoves, j);
+				}
+				else {
+				c = c->next;
+				continue;
 				}
 			}
+		
 			else if(!InArray(c->p)){
 				if(road) {
 					addRoadConnection(c->p, j);
