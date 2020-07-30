@@ -108,17 +108,19 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 
     // Check for hide and double-backs on trail
     int hide = false;
+    int hideIndex;
     int doubleBack = false;
     for (int i = 0; i < numTrailMoves; i++) {
         if (trail[i] == HIDE) {
             hide = true;
+            hideIndex = i;
         } else if (DOUBLE_BACK_1 <= trail[i] && trail[i] <= DOUBLE_BACK_5) {
             doubleBack = true;
         }
     }
     
-    // If Dracula has not used HIDE, replace currentLocation with HIDE
-    if (hide == false) {
+    // If Dracula has not used HIDE and is not at sea, replace currentLocation with HIDE
+    if (hide == false && placeIdToType(currentLocation) != SEA) {
         for (int i = 0; i < *numReturnedMoves; i++) {
             if (currentLocation == moves[i]) {
                 moves[i] = HIDE;
@@ -137,10 +139,19 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
         for (int nTrail = 0; nTrail < tempNum; nTrail++) {
             for (int i = 0; i < *numReturnedMoves; i++) {
                 if (lastLocations[nTrail] == moves[i]) {
-                    moves[i] = DOUBLE_BACK_1 + nTrail;
+                    moves[i] = DOUBLE_BACK_1 + (tempNum - nTrail - 1);
                     break;
                 }
             }
+        }
+
+        // if hide was used and is not the last move on the trail, add DB that refers to it's location
+            // since it should show up twice but we had a unique list
+            // if it was the last move on the trail, it is already unique so we don't need to add
+        if (hide == true && hideIndex != 0) {
+            *numReturnedMoves = *numReturnedMoves + 1;
+            moves = realloc(moves, *numReturnedMoves * sizeof(int));
+            moves[*numReturnedMoves - 1] = DOUBLE_BACK_1 + (tempNum - hideIndex - 1);
         }
         
         // Free lastLocations
@@ -150,12 +161,11 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
     }
 
     // If Dracula can HIDE or DB, then add DB1 (missing)
-    if (doubleBack == false && hide == false) {
+    if (doubleBack == false && hide == false && placeIdToType(currentLocation) != SEA) {
         *numReturnedMoves = *numReturnedMoves + 1;
         moves = realloc(moves, *numReturnedMoves * sizeof(int));
         moves[*numReturnedMoves - 1] = DOUBLE_BACK_1;
     }
-
 
     return moves;
 
@@ -226,7 +236,6 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
             free(lastLocations);
         }
     }
-    // Free
 
     // If teleport is only move, return NULL
     if (*numReturnedLocs == 0) {

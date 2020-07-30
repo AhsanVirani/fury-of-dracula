@@ -233,6 +233,7 @@ int main(void)
     {///////////////////////////////////////////////////////////////////
     purple();
     printf("Test for when DB is valid but HIDE is invalid (already used)\n");
+    printf(" --- Also checking that DB can refer to a HIDE\n");
     resetColour();
     char *trail =
         "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
@@ -241,17 +242,17 @@ int main(void)
     
     Message messages[14] = {};
     DraculaView dv = DvNew(trail, messages);
- 	 printf("Player Location is %s", placeIdToName(DvGetPlayerLocation(dv, 4)));
     int num = -1;
 
     // DvGetValidMoves
     printf("... testing DvGetValidMoves\n");
     PlaceId *moves = DvGetValidMoves(dv, &num);
-    assert(num == 3);
+    assert(num == 4);
     sortPlaces(moves, num);
     assert(moves[0] == GALATZ);
     assert(moves[1] == KLAUSENBURG);
     assert(moves[2] == DOUBLE_BACK_1);
+    assert(moves[3] == DOUBLE_BACK_2);
     free(moves);
 
     // DvWhereCanIGo
@@ -372,10 +373,10 @@ int main(void)
     PlaceId *locations = DvWhereCanIGo(dv, &num);
     assert(num == 4);
     sortPlaces(locations, num);
-    assert(moves[0] == BLACK_SEA);
-    assert(moves[1] == CONSTANTA);
-    assert(moves[2] == IONIAN_SEA);
-    assert(moves[3] == VARNA);
+    assert(locations[0] == BLACK_SEA);
+    assert(locations[1] == CONSTANTA);
+    assert(locations[2] == IONIAN_SEA);
+    assert(locations[3] == VARNA);
     free(locations);
 
     DvFree(dv);
@@ -412,8 +413,8 @@ int main(void)
     PlaceId *locations = DvWhereCanIGo(dv, &num);
     assert(num == 2);
     sortPlaces(locations, num);
-    assert(moves[0] == IONIAN_SEA);
-    assert(moves[1] == VARNA);
+    assert(locations[0] == IONIAN_SEA);
+    assert(locations[1] == VARNA);
     free(locations);
 
     DvFree(dv);
@@ -437,18 +438,22 @@ int main(void)
     // DvGetValidMoves
     printf("... testing DvGetValidMoves\n");
     PlaceId *moves = DvGetValidMoves(dv, &num);
-    assert(num == 2);
+    assert(num == 4);
     sortPlaces(moves, num);
     assert(moves[0] == HIDE);
     assert(moves[1] == DOUBLE_BACK_1);
+    assert(moves[2] == DOUBLE_BACK_2);
+    assert(moves[3] == DOUBLE_BACK_3);
     free(moves);
 
     // DvWhereCanIGo
     printf("... testing DvWhereCanIGo\n");
     PlaceId *locations = DvWhereCanIGo(dv, &num);
-    assert(num == 1);
+    assert(num == 3);
     sortPlaces(locations, num);
-    assert(moves[0] == CASTLE_DRACULA);
+    assert(locations[0] == CASTLE_DRACULA);
+    assert(locations[1] == GALATZ);
+    assert(locations[2] == KLAUSENBURG);
     free(locations);
 
     DvFree(dv);
@@ -517,6 +522,56 @@ int main(void)
     DvFree(dv);
     passed();
     }
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when HIDE is about to fall off trail\n");
+    resetColour();
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
+        "GGE.... SGE.... HGE.... MGE.... DHIT... "
+        "GGE.... SGE.... HGE.... MGE.... DKLT... "
+        "GGE.... SGE.... HGE.... MGE.... DBET... "
+        "GGE.... SGE.... HGE.... MGE.... DBCT... "
+        "GGE.... SGE.... HGE.... MGE.... DGAT... "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[34] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 5);
+    sortPlaces(moves, num);
+    assert(moves[0] == CONSTANTA);
+    assert(moves[1] == DOUBLE_BACK_1);
+    assert(moves[2] == DOUBLE_BACK_2);
+    assert(moves[3] == DOUBLE_BACK_4);
+    assert(moves[4] == DOUBLE_BACK_5);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 5);
+    sortPlaces(locations, num);
+    assert(locations[0] == BUCHAREST);
+    assert(locations[1] == CASTLE_DRACULA);
+    assert(locations[2] == CONSTANTA);
+    assert(locations[3] == GALATZ);
+    assert(locations[4] == KLAUSENBURG);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
+    printf("\033[4;33m"); 
+    printf("All tests passed.\n");
+    printf("\n");
+
 
 	return EXIT_SUCCESS;
 }
