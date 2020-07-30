@@ -817,17 +817,17 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 	else {
 		int RailMoves = distanceRail(round, player); 
 		while(c != NULL) {
-			if(rail) {
-				if(c->type == RAIL) {
-					if(RailMoves > 0) {
-						j = addRailConnection_wrapper(gv, c->p, RailMoves, j);
-					}
-					else {
-					c = c->next;
-					continue;
-					}
+			
+			if(c->type == RAIL && rail) {
+				if(RailMoves > 0) {
+					j = addRailConnection_wrapper(gv, c->p, RailMoves, j);
+				}
+				else {
+				c = c->next;
+				continue;
 				}
 			}
+			
 			else if(!InArray(c->p)){
 				if(road) {
 					addRoadConnection(c->p, j);
@@ -854,8 +854,14 @@ void white_box() {
 	//printf("%d %d %d %d %d %d\n",placeAbbrevToId("MN"), placeAbbrevToId("PL"), placeAbbrevToId("AM"), placeAbbrevToId("PA"), placeAbbrevToId("CD"), placeAbbrevToId("LV"));
 	GameView gv = GvNew(pastPlays, NULL);
 
-	printf("%s %s\n", placeIdToName(PlayersPlaceHist[4][0]), placeIdToName(PlayersPlaceHist[4][1]));
-	printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, 4)));
+	int *numReturnedLocs = malloc(sizeof(int));
+	GvGetReachableByType(gv, 0, 0,
+                              EDINBURGH, true,true,
+                              true, numReturnedLocs);
+	printf("%d\n", *numReturnedLocs);
+	printf("%s\n", placeIdToName(connectionArr[1]));
+	//printf("%s %s\n", placeIdToName(PlayersPlaceHist[4][0]), placeIdToName(PlayersPlaceHist[4][1]));
+	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, 4)));
 	//printf("%s\n", placeIdToName(connectionArr[0]));
 
 
