@@ -112,7 +112,7 @@ void showGraph (Graph g, char **names)
 int findPath (Graph g, Vertex src, Vertex dest, int max, int *path)
 {
 	assert (g != NULL && validV(g, src) && validV(g, dest));
-	
+
 	// Path of length 1 i.e. src to src
 	if(src == dest) {
 		path[0] = src;
@@ -130,11 +130,11 @@ int findPath (Graph g, Vertex src, Vertex dest, int max, int *path)
 	pathcpy[src] = 0;
 
 
-	int PATH_FOUND = 0;	
+	int PATH_FOUND = 0;
 	while(!QueueIsEmpty(q)) {
 		Item v = QueueLeave(q);
 		if(PATH_FOUND) break;
-		Vertex w;	
+		Vertex w;
 		for(w=0; w < g->nV; w++) {
 			if(!g->edges[v][w] || g->edges[v][w] > max)	continue;
 			if(!visited[w]) {
@@ -152,22 +152,21 @@ int findPath (Graph g, Vertex src, Vertex dest, int max, int *path)
 
 	if(dist[dest] > 0) {
 		i = dist[dest];
-		printf("%d\n", dist[dest]);	
+		printf("%d\n", dist[dest]);
 		path[i] = dest;
 		i--;
 		int destcpy = dest;
 		while(i >= 0) {
 			path[i] = pathcpy[destcpy];
 			destcpy = pathcpy[destcpy];
-			i--;			
+			i--;
 		}
 		free(dist); free(visited); free(pathcpy);
 		// Path found of length > 1
 		return dist[dest]+1;
 	}
 	free(dist); free(visited); free(pathcpy);
-	
+
 	// No path found
 	return 0;
 }
-

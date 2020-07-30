@@ -18,8 +18,8 @@ all: $(BINS)
 testGameView: testGameView.o testUtils.o GameView.o Map.o Places.o
 testGameView.o: testGameView.c GameView.h Map.h Places.h Game.h
 
-testHunterView: testHunterView.o testUtils.o HunterView.o GameView.o Map.o Places.o
-testHunterView.o: testHunterView.c HunterView.h GameView.h Map.h Places.h Game.h
+testHunterView: testHunterView.o testUtils.o HunterView.o GameView.o Map.o Places.o Queue.o
+testHunterView.o: testHunterView.c HunterView.h Queue.h GameView.h Map.h Places.h Game.h 
 
 testDraculaView: testDraculaView.o testUtils.o DraculaView.o GameView.o Map.o Places.o
 testDraculaView.o: testDraculaView.c DraculaView.h GameView.h Map.h Places.h Game.h
@@ -31,6 +31,7 @@ Places.o: Places.c Places.h Game.h
 Map.o: Map.c Map.h Places.h Game.h
 GameView.o:	GameView.c GameView.h Game.h
 HunterView.o: HunterView.c HunterView.h Game.h
+Queue.o : Queue.c Queue.h Places.h
 DraculaView.o: DraculaView.c DraculaView.h Game.h
 testUtils.o: testUtils.c Places.h Game.h
 

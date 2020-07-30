@@ -19,6 +19,22 @@
 #include "HunterView.h"
 #include "Map.h"
 #include "Places.h"
+#include "Queue.h"
+
+#define MAX 70
+
+int intArray[MAX];
+int front = 0;
+int rear = -1;
+int itemCount = 0;
+
+int peek();
+bool isEmpty(); 
+bool isFull(); 
+int size();
+void insert(int data);
+int removeData();
+
 // add your own #includes here
 
 // TODO: ADD YOUR OWN STRUCTS HERE
@@ -134,8 +150,96 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
                              int *pathLength)
 {
 	
-	*pathLength = -1;
+	Map tempMap = MapNew();
+	int connNum = MapNumPlaces(tempMap);
+	int *dist = calloc (connNum, sizeof(int));
+
+
+	PlaceId *visited = calloc (connNum, sizeof(PlaceId));
+	PlaceId *prevPlace = malloc (connNum * sizeof(PlaceId));
+	int i;
+	for (i = 0; i < connNum; i++) {
+		prevPlace[i] = NOWHERE;
+	}
+	PlaceId start = GvGetPlayerLocation(hv->gView, hunter);
+	Q q = newQueue();
+	QueueJoin(q, start);
+	prevPlace[start] = NOWHERE;
+	Round round = GvGetRound(hv->gView);
+
+	bool found = false;
+	while (!QueueIsEmpty(q)) {
+		PlaceId curr = QueueLeave(q);
+		if (found) break;
+		int num;
+		//  Hey Ahsan, this is where i think the bug is.
+		PlaceId *next = GvGetReachableByType(hv->gView,hunter,round,curr,true,true,true,&num);
+		round++;
+		const char *namecurr = placeIdToName(curr);
+		printf("$$$$The current place is %s$$$$$$$\n", namecurr);
+		for (int i = 0; i < num; i++) {
+			const char *temp = placeIdToName(next[i]);
+			printf("****The Place is %s******\n", temp);
+			if (visited[next[i]] == 0) {
+				visited[next[i]] = 1;
+				QueueJoin(q,next[i]);
+				dist[next[i]] = dist[curr] + 1;
+				prevPlace[next[i]] = curr;
+				if (next[i] == dest) {
+					found = true;
+					break;
+				} 
+			}
+
+		}
+
+	}
+	// For example from MARSEILLES the possible connections should include 
+	// Milan or Genoa
+	// but it only returns itself
+
+		Round testround = GvGetRound(hv->gView);
+		int testNum;
+		PlaceId *test = GvGetReachableByType(hv->gView,hunter,testround++,MARSEILLES,true,true,true,&testNum);
+		for (i = 0; i < testNum; i++) {
+			printf("from Marseilles %d\n", test[i]);
+		}
+
+	printf("the pathlength is %d\n", dist[dest]);
+
+	if (dist[dest] > 0) {
+		int index = dist[dest] - 2;
+		
+		PlaceId *path = calloc(index, sizeof(PlaceId));
+		path[index] = dest;
+		// printf("**********The place is %d*********\n", path[index]);
+		// printf("Hello\n");
+		
+		index--;
+		PlaceId destcpy = dest;
+		
+		while (index >= 0) {
+			path[index] = prevPlace[destcpy];
+			// printf("**********The place is %d*********\n", path[index]);
+			destcpy = prevPlace[destcpy];
+			index--;
+		}
+
+		free(dist); free(prevPlace); free(visited); dropQueue(q);
+
+		*pathLength = dist[dest] - 1;
+
+		// for (int i = 0; i < *pathLength; i++) {
+		// 	printf("The path is %d\n", path[i]);
+		// }
+		
+		return path;
+	}
+	
+	free(dist); free(visited); free(prevPlace); dropQueue(q);
+	*pathLength = 0;
 	return NULL;
+
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -205,3 +309,43 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
 // Your own interface functions
 
 // TODO
+
+int peek() {
+   return intArray[front];
+}
+
+bool isEmpty() {
+   return itemCount == 0;
+}
+
+bool isFull() {
+   return itemCount == MAX;
+}
+
+int size() {
+   return itemCount;
+}  
+
+void insert(int data) {
+
+   if(!isFull()) {
+	
+      if(rear == MAX-1) {
+         rear = -1;            
+      }       
+
+      intArray[++rear] = data;
+      itemCount++;
+   }
+}
+
+int removeData() {
+   int data = intArray[front++];
+	
+   if(front == MAX) {
+      front = 0;
+   }
+	
+   itemCount--;
+   return data;  
+}
