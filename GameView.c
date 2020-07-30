@@ -443,6 +443,12 @@ void decrementGameScore(GameView gv)
 void GvFree(GameView gv)
 {
 	assert(gv != NULL);
+	
+	// free PlayersPlaceHist
+	int i;
+	for(i = 0; i < NUM_PLAYERS; i++)
+		free(PlayersPlaceHist[i]);
+	free(PlayersPlaceHist);
 
 	MapFree(gv->graph);
 	free(gv);
@@ -637,7 +643,7 @@ PlaceId *GvGetLocationHistory(GameView gv, Player player,
 			break;
 	}
 	*numReturnedLocs = i;
-	*canFree = true;
+	*canFree = false;
 	return PlayersPlaceHist[player];
 }
 
@@ -648,12 +654,12 @@ PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
 	
 	if((gv->numRound) >= numLocs) {
 		*numReturnedLocs = numLocs;
-		*canFree = true;
+		*canFree = false;
 		int newLocHead = (player >=0 && player <= 3) && (PlayersPlaceHist[4][gv->numRound] == NOWHERE)? (gv->numRound+1-numLocs):(gv->numRound-numLocs);
 		return &PlayersPlaceHist[player][newLocHead];
 	}
 	*numReturnedLocs = (player >=0 && player <= 3) && (PlayersPlaceHist[4][gv->numRound] == NOWHERE)? (gv->numRound+1): gv->numRound;
-	*canFree = true;
+	*canFree = false;
 	return PlayersPlaceHist[player];
 }
 
