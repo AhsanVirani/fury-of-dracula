@@ -8,7 +8,6 @@
 // 2020-07-10   v3.0    Team Dracula <cs2521@cse.unsw.edu.au>
 //
 ////////////////////////////////////////////////////////////////////////
-// M malfunction 6th character. Fix bug
 
 #include <assert.h>
 #include <stdbool.h>
@@ -32,7 +31,7 @@ char abbre[ABBREVIATION_SIZE];
 char move[MOVE_SIZE];
 PlaceId **PlayersPlaceHist;
 PlaceId *moveHistory;
-PlaceId * trap; // work done after trap function. Free this
+PlaceId *trap; // work done after trap function. Free this
 PlaceId *visited;
 PlaceId *connectionArr;
 
@@ -54,8 +53,15 @@ static void incrementRound(GameView);
 static void decrementGameScore(GameView);
 static void addTrail(GameView gv, PlaceId loc, bool isVamp);
 static void removeTrail(GameView gv, PlaceId loc, bool isVamp);
-static int *findnumReturnedMoves(GameView gv, Player player, int numMoves, int *numReturnedMoves);
-static int distanceRail(int roundNum, Player player);
+static int *findnumReturnedMoves(GameView, Player, int, int *);
+static int distanceRail(int, Player);
+static void makeVisited(PlaceId);
+static int checkVisited(PlaceId);
+static int InArray(PlaceId);
+static int addRailConnection(GameView, PlaceId, int, int);
+static int addRailConnection_wrapper(GameView, PlaceId, int, int);
+static void addRoadConnection(PlaceId, int);
+static void addBoatConnection(PlaceId, int);
 
 
 struct node_hunters {
@@ -216,6 +222,7 @@ void set_playerInfo(GameView gv, char *move, char *abbre)
 		PlaceDraculaEncounter(gv, move[3]);
 		PlaceDraculaEncounter(gv, move[4]);
 		PlaceDraculaAction(gv, move[5]);
+		PlaceDraculaAction(gv, move[6]);
 		// Increase round number and decrease gamescore at end of Dracula's turn
 		incrementRound(gv);
 		decrementGameScore(gv);
@@ -435,6 +442,10 @@ void decrementGameScore(GameView gv)
 
 void GvFree(GameView gv)
 {
+	assert(gv != NULL);
+
+	MapFree(gv->graph);
+	free(gv);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -649,6 +660,7 @@ PlaceId *GvGetLastLocations(GameView gv, Player player, int numLocs,
 ////////////////////////////////////////////////////////////////////////
 // Making a Move
 
+
 static 
 int distanceRail(int roundNum, Player player)
 {
@@ -698,7 +710,7 @@ int InArray(PlaceId p)
 }
 
 static
-int wrapper(GameView gv, PlaceId from, int RailMoves, int pos)
+int addRailConnection(GameView gv, PlaceId from, int RailMoves, int pos)
 {
 	if(!InArray(from)) {
 		connectionArr[pos] = from;
@@ -721,7 +733,7 @@ int wrapper(GameView gv, PlaceId from, int RailMoves, int pos)
 			w = w->next;		
 			continue;
 		}
-		pos = wrapper(gv, w->p, RailMoves-1, pos);
+		pos = addRailConnection(gv, w->p, RailMoves-1, pos);
 		w = w->next;
 	}
 	return pos;
@@ -729,90 +741,17 @@ int wrapper(GameView gv, PlaceId from, int RailMoves, int pos)
 
 // returns total number of connections added
 static
-int addRailConn(GameView gv, PlaceId from, int RailMoves, int pos)
-{
-	// store place id
-	visited = malloc(sizeof(PlaceId) * MAX_RAIL_CONNECTIONS);
-	for(int i = 0; i < MAX_RAIL_CONNECTIONS; i++)
-		visited[i] = NOWHERE;
-	//makeVisited(connectionArr[0]);
-	pos = wrapper(gv, from, RailMoves, pos);
-	free(visited);
-
-	return pos;
-}
-
-// addRailConn
-// adds from the array
-// creates visited array. from to visited array puts.
-// for loop to see neights of from. If rail connection found and not visited, railMoves-- as parameter
-// at top, adds to array the first neighbour rail connection. checks if railMoves == 0 return;
-// If returns, means railMoves == 1 and checks all other rail connections of main src and adds to array similarly and ends
-// else add 1st rail conn of src main to array and marks as visited. Now checks all its neighbours i.e. 2nd rail connection from src
-// if not visited and rail connection then recursive call with railMoves--;
-
-
-PlaceId *GvGetReachable(GameView gv, Player player, Round round,
-                        PlaceId from, int *numReturnedLocs)
+int addRailConnection_wrapper(GameView gv, PlaceId from, int RailMoves, int pos)
 {
 	assert(gv != NULL);
 
-	connectionArr = malloc(sizeof(PlaceId) * MAX_CONNECTION);
-	int i; int j = 1;	
-	for(i = 0; i < MAX_CONNECTION; i++)
-		connectionArr[i] = NOWHERE;
+	visited = malloc(sizeof(PlaceId) * MAX_RAIL_CONNECTIONS);
+	for(int i = 0; i < MAX_RAIL_CONNECTIONS; i++)
+		visited[i] = NOWHERE;
+	pos = addRailConnection(gv, from, RailMoves, pos);
+	free(visited);
 
-	connectionArr[0] = from;
-	printf("%s\n", placeIdToName(connectionArr[0]));
-	ConnList c = MapGetConnections(gv->graph, connectionArr[0]);
-		
-	if(player == 4) {
-		//printf("%s\n", placeIdToName(connectionArr[0]));
-		while(c != NULL) {
-			if(c->type == RAIL) {
-				c = c->next;
-				continue;
-			}
-			if(c->p == ST_JOSEPH_AND_ST_MARY) {
-				c = c->next;
-				continue;
-			}
-			connectionArr[j] = c->p;
-			//printf("%s\n", placeIdToName(connectionArr[j]));
-			j++;
-			c = c->next;
-		}
-	}
-
-	else {
-		int RailMoves = distanceRail(round, player); 
-		while(c != NULL) {
-			if(c->type == RAIL) {
-				if(RailMoves > 0) {
-					j = addRailConn(gv, c->p, RailMoves, j);
-				}
-				// if RailMoves == 0 then nothing to add and j = 1 right place to insert for next time
-				else {
-				c = c->next;
-				continue;
-				}
-			}
-			else if(!InArray(c->p)){
-				connectionArr[j] = c->p;
-				printf("%s\n", placeIdToName(connectionArr[j]));
-				//printf("%s\n", placeIdToName(connectionArr[j]));
-				j++;
-			}
-			c = c->next;
-		}
-	}
-		// Check if rail connection then call add to railconn
-		// takes RailMoves as important parameter
-		
-		// otherwise simply adds
-
-	*numReturnedLocs = j;
-	return connectionArr;
+	return pos;
 }
 
 // Add Road Connection to the Array
@@ -829,6 +768,15 @@ void addBoatConnection(PlaceId p, int pos)
 	connectionArr[pos] = p;
 }
 
+
+PlaceId *GvGetReachable(GameView gv, Player player, Round round,
+                        PlaceId from, int *numReturnedLocs)
+{
+	assert(gv != NULL);
+
+	return GvGetReachableByType(gv, player, round, from, true, true, true, numReturnedLocs);
+}
+
 PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
                               PlaceId from, bool road, bool rail,
                               bool boat, int *numReturnedLocs)
@@ -841,11 +789,9 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 		connectionArr[i] = NOWHERE;
 
 	connectionArr[0] = from;
-	printf("%s\n", placeIdToName(connectionArr[0]));
 	ConnList c = MapGetConnections(gv->graph, connectionArr[0]);
-		
-	if(player == 4) {
-		//printf("%s\n", placeIdToName(connectionArr[0]));
+	// If Player is PLAYER_DRACULA
+	if(player == PLAYER_DRACULA) {
 		while(c != NULL) {
 			if(c->type == RAIL) {
 				c = c->next;
@@ -864,20 +810,18 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 				addBoatConnection(c->p, j);
 				j++;	
 			}
-			//printf("%s\n", placeIdToName(connectionArr[j]));
 			c = c->next;
 		}
 	}
-
+	// If Player is HUNTER
 	else {
 		int RailMoves = distanceRail(round, player); 
 		while(c != NULL) {
 			if(rail) {
 				if(c->type == RAIL) {
 					if(RailMoves > 0) {
-						j = addRailConn(gv, c->p, RailMoves, j);
+						j = addRailConnection_wrapper(gv, c->p, RailMoves, j);
 					}
-					// if RailMoves == 0 then nothing to add and j = 1 right place to insert for next time
 					else {
 					c = c->next;
 					continue;
@@ -893,16 +837,10 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 					addBoatConnection(c->p, j);
 					j++;
 				}
-					//printf("%s\n", placeIdToName(connectionArr[j]));
-					//printf("%s\n", placeIdToName(connectionArr[j]));
 			}
 			c = c->next;
 		}
 	}
-		// Check if rail connection then call add to railconn
-		// takes RailMoves as important parameter
-		
-		// otherwise simply adds
 
 	*numReturnedLocs = j;
 	return connectionArr;
@@ -910,14 +848,14 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 
 void white_box() {
 	
-	char *pastPlays =	"GGE.... SGE.... HGE.... MGE.... DC?.V.. GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T... GGE.... SGE.... HGE.... MGE.... DC?T.V.";
+	char *pastPlays =	         "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
+        "GGE.... SGE.... HGE.... MGE....";
+    
 	//printf("%d %d %d %d %d %d\n",placeAbbrevToId("MN"), placeAbbrevToId("PL"), placeAbbrevToId("AM"), placeAbbrevToId("PA"), placeAbbrevToId("CD"), placeAbbrevToId("LV"));
 	GameView gv = GvNew(pastPlays, NULL);
-	
-	int *numReturnedLocs = malloc(sizeof(int));
-	PlaceId *c = GvGetReachableByType(gv, PLAYER_LORD_GODALMING, 3, PARIS, false, false, false, numReturnedLocs);
-	printf("%d\n", *numReturnedLocs);
 
+	printf("%s %s\n", placeIdToName(PlayersPlaceHist[4][0]), placeIdToName(PlayersPlaceHist[4][1]));
+	printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, 4)));
 	//printf("%s\n", placeIdToName(connectionArr[0]));
 
 

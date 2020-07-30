@@ -19,9 +19,16 @@
 #include <string.h>
 
 #include "DraculaView.h"
+#include "GameView.h"
 #include "Game.h"
 #include "Places.h"
 #include "testUtils.h"
+
+#define green() printf("\033[1;32m")
+#define purple() printf("\033[0;35m")
+#define resetColour() printf("\033[0m")
+
+void passed();
 
 int main(void)
 {
@@ -166,5 +173,357 @@ int main(void)
 		DvFree(dv);
 	}
 
+    printf("\n");
+    printf("\n");
+    printf("////////////////////////////////////////////////////////////////////\n");
+    printf("//////////////////////////    MY TESTS    //////////////////////////\n");
+    printf("////////////////////////////////////////////////////////////////////\n");
+    printf("\n");
+
+    printf("NOTES:");
+    printf(" --- All game state functions are identical to their GameView.c counterparts\n");
+    printf(" --- DvGetValidMoves bootstraps and modifies DvWhereCanIGo\n");
+    printf(" --- DvWhereCanIGo is identical to DvWhereCanIGoByType for Dracula\n");
+    printf(" --- DvWhereCanTheyGo and DvWhereCanTheyGoByType for Dracula are identical\n");
+    printf("     to their Dracula specific counterparts above\n");
+    printf(" --- DvWhereCanTheyGo and DvWhereCanTheyGoByType for Hunters are identical\n");
+    printf("     to GvGetReachable and GvGetReachableByType in GameView.c\n");
+    printf(" --- Unlike the functions in GameView.c, these will take into account Dracula's trail\n");
+    printf("\n");
+    printf("With these assumptions in mind, we are testing for DvGetValidMoves and DvWhereCanIGo\n");
+    printf("\n");
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when HIDE and DB are valid\n");
+    resetColour();
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[9] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 4);
+    sortPlaces(moves, num);
+    assert(moves[0] == GALATZ);
+    assert(moves[1] == KLAUSENBURG);
+    assert(moves[2] == HIDE);
+    assert(moves[3] == DOUBLE_BACK_1);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 3);
+    sortPlaces(locations, num);
+    assert(locations[0] == CASTLE_DRACULA);
+    assert(locations[1] == GALATZ);
+    assert(locations[2] == KLAUSENBURG);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when DB is valid but HIDE is invalid (already used)\n");
+    resetColour();
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
+        "GGE.... SGE.... HGE.... MGE.... DHIT... "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[14] = {};
+    DraculaView dv = DvNew(trail, messages);
+ 	 printf("Player Location is %s", placeIdToName(DvGetPlayerLocation(dv, 4)));
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 3);
+    sortPlaces(moves, num);
+    assert(moves[0] == GALATZ);
+    assert(moves[1] == KLAUSENBURG);
+    assert(moves[2] == DOUBLE_BACK_1);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 3);
+    sortPlaces(locations, num);
+    assert(locations[0] == CASTLE_DRACULA);
+    assert(locations[1] == GALATZ);
+    assert(locations[2] == KLAUSENBURG);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when HIDE is valid but DB is invalid (already used)\n");
+    resetColour();
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
+        "GGE.... SGE.... HGE.... MGE.... DD1T... "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[14] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 3);
+    sortPlaces(moves, num);
+    assert(moves[0] == GALATZ);
+    assert(moves[1] == KLAUSENBURG);
+    assert(moves[2] == HIDE);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 3);
+    sortPlaces(locations, num);
+    assert(locations[0] == CASTLE_DRACULA);
+    assert(locations[1] == GALATZ);
+    assert(locations[2] == KLAUSENBURG);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when both HIDE and DB are invalid (already used)\n");
+    resetColour();
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
+        "GGE.... SGE.... HGE.... MGE.... DD1T... "
+        "GGE.... SGE.... HGE.... MGE.... DHIT... "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[19] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 2);
+    sortPlaces(moves, num);
+    assert(moves[0] == GALATZ);
+    assert(moves[1] == KLAUSENBURG);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 2);
+    sortPlaces(locations, num);
+    assert(locations[0] == GALATZ);
+    assert(locations[1] == KLAUSENBURG);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when Dracula is at sea: HIDE is invalid but DB is valid\n");
+    resetColour();
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
+        "GGE.... SGE.... HGE.... MGE.... DGAT... "
+        "GGE.... SGE.... HGE.... MGE.... DCNT... "
+        "GGE.... SGE.... HGE.... MGE.... DBS.... "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[24] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 4);
+    sortPlaces(moves, num);
+    assert(moves[0] == IONIAN_SEA);
+    assert(moves[1] == VARNA);
+    assert(moves[2] == DOUBLE_BACK_1);
+    assert(moves[3] == DOUBLE_BACK_2);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 4);
+    sortPlaces(locations, num);
+    assert(moves[0] == BLACK_SEA);
+    assert(moves[1] == CONSTANTA);
+    assert(moves[2] == IONIAN_SEA);
+    assert(moves[3] == VARNA);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when Dracula is at sea: HIDE is invalid and DB is used\n");
+    resetColour();
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DCD.V.. "
+        "GGE.... SGE.... HGE.... MGE.... DGAT... "
+        "GGE.... SGE.... HGE.... MGE.... DCNT... "
+        "GGE.... SGE.... HGE.... MGE.... DBS.... "
+        "GGE.... SGE.... HGE.... MGE.... DD1.... "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[29] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 2);
+    sortPlaces(moves, num);
+    assert(moves[0] == IONIAN_SEA);
+    assert(moves[1] == VARNA);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 2);
+    sortPlaces(locations, num);
+    assert(moves[0] == IONIAN_SEA);
+    assert(moves[1] == VARNA);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when HIDE and DB are the only valid moves\n");
+    resetColour();
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DGA.V.. "
+        "GGE.... SGE.... HGE.... MGE.... DKLT... "
+        "GGE.... SGE.... HGE.... MGE.... DCDT... "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[19] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 2);
+    sortPlaces(moves, num);
+    assert(moves[0] == HIDE);
+    assert(moves[1] == DOUBLE_BACK_1);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 1);
+    sortPlaces(locations, num);
+    assert(moves[0] == CASTLE_DRACULA);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when there are no valid moves\n");
+    resetColour();
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE.... DGA.V.. "
+        "GGE.... SGE.... HGE.... MGE.... DKLT... "
+        "GGE.... SGE.... HGE.... MGE.... DCDT... "
+        "GGE.... SGE.... HGE.... MGE.... DD1T... "
+        "GGE.... SGE.... HGE.... MGE.... DHIT... "
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[29] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 0);
+    assert(moves == NULL);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 0);
+    assert(locations == NULL);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when Dracula has not moved\n");
+    resetColour();
+    char *trail =
+        "GGE.... SGE.... HGE.... MGE....";
+    
+    Message messages[4] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 0);
+    assert(moves == NULL);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 0);
+    assert(locations == NULL);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
 	return EXIT_SUCCESS;
+}
+
+void passed() {
+    green();
+    printf("Test passed!\n");
+    printf("\n");
+    resetColour();
 }
