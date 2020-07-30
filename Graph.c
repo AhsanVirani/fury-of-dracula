@@ -162,7 +162,7 @@ int findPath (Graph g, Vertex src, Vertex dest, int max, int *path)
 			i--;
 		}
 		free(dist); free(visited); free(pathcpy);
-		// Path found of length > 1
+		// Path found of length > 1vi
 		return dist[dest]+1;
 	}
 	free(dist); free(visited); free(pathcpy);

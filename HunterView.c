@@ -192,18 +192,30 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 			}
 
 		}
+		free(next);
 
 	}
+	
 	// For example from MARSEILLES the possible connections should include 
 	// Milan or Genoa
 	// but it only returns itself
 
-		Round testround = GvGetRound(hv->gView);
-		int testNum;
-		PlaceId *test = GvGetReachableByType(hv->gView,hunter,testround++,MARSEILLES,true,true,true,&testNum);
-		for (i = 0; i < testNum; i++) {
-			printf("from Marseilles %d\n", test[i]);
-		}
+	// ConnList list = MapGetConnections(tempMap, EDINBURGH);
+	// while (list != NULL) {
+	// 	const char *name = placeIdToName(list->p);
+	// 	printf("from Edinburgh0: %s\n", name);
+	// 	list = list->next;
+	// }
+
+	// 	Round testround = GvGetRound(hv->gView);
+	// 	int testNum;
+	// 	PlaceId *test = GvGetReachableByType(hv->gView,hunter,testround,EDINBURGH,true,true,true,&testNum);
+	// 	const char *myname;
+	// 	for (i = 0; i < testNum; i++) {
+	// 		my
+	// 		printf("from Edinburgh1 %d\n", test[i]);
+	// 	}
+	// 	free(test);
 
 	printf("the pathlength is %d\n", dist[dest]);
 
@@ -226,6 +238,7 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 		}
 
 		free(dist); free(prevPlace); free(visited); dropQueue(q);
+		
 
 		*pathLength = dist[dest] - 1;
 
@@ -237,6 +250,7 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 	}
 	
 	free(dist); free(visited); free(prevPlace); dropQueue(q);
+	// free(next);
 	*pathLength = 0;
 	return NULL;
 
