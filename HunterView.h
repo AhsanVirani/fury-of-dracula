@@ -214,6 +214,8 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
 
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
+PlaceId *findShortestPath(HunterView hv, Player hunter, Round round,
+                          PlaceId start, PlaceId dest);
 
 // TODO
 

@@ -133,53 +133,7 @@ PlaceId HvGetLastKnownDraculaLocation(HunterView hv, Round *round)
 PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
                              int *pathLength)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-
-	// PlaceId start = GvGetPlayerLocation(hv->gView, hunter);
-	// int num;
-	// Round round = GvGetRound(hv->gView);
-	// PlaceId *path;
-	// int count = 0;
-	// PlaceId *result;
-
-	// bool found = false;
-	// while (found == false) {
-	// 	if (count == 0)
-	// 		result = GvGetReachable(hv->gView,hunter,round,start, &num);
-	// 	else
-	// 		result = GvGetReachable(hv->gView,hunter,round,path[count], &num);
-		
-	// 	for (int i = 1; i < num; i++) {
-	// 		if (result[i] == dest) {
-	// 			path[count] = result[i];
-	// 			found = true;
-	// 		} 
-	// 	}
-
-	// 	if (found == false) {
-	// 		for (int i = 1; i < num; i++) {
-	// 			path[count] = result[i];
-	// 			count++;
-	// 		} 
-
-	// 	}
-	// }
-
-	// PlaceId *result = findShortestPath(hv, hunter, round, start, dest);
-	// PlaceId *result = GvGetReachable(hv->gView,hunter,round,start, &num);
-	// for (int i = 0; i < num; i++) {
-	// 	printf("The place is  %d\n", result[i]);
-	// 	//;
-	// }   
-	// printf("***************\n");
-	// round = GvGetRound(hv->gView);
-	// round++;
-	// PlaceId *result0 = GvGetReachable(hv->gView,hunter,round,result[1], &num);
 	
-	// for (int i = 0; i < num; i++) {
-	// 	printf("The place is  %d\n", result0[i]);
-	// 	//;
-	// } 
 	*pathLength = -1;
 	return NULL;
 }
