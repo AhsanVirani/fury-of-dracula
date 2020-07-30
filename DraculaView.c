@@ -170,7 +170,7 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
                              int *numReturnedLocs)
 {
 	// Get current location
-    PlaceId currentLocation = GvGetPlayerLocation(dv->gv, PLAYER_DRACULA);
+    PlaceId currentLocation = DvGetPlayerLocation(dv, PLAYER_DRACULA);
 
     // Check that the player has made a move, else return 0
 	if (currentLocation == NOWHERE) {

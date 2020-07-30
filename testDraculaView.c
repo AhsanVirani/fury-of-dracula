@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "DraculaView.h"
+#include "GameView.h"
 #include "Game.h"
 #include "Places.h"
 #include "testUtils.h"
@@ -240,6 +241,7 @@ int main(void)
     
     Message messages[14] = {};
     DraculaView dv = DvNew(trail, messages);
+ 	 printf("Player Location is %s", placeIdToName(DvGetPlayerLocation(dv, 4)));
     int num = -1;
 
     // DvGetValidMoves

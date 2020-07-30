@@ -301,9 +301,10 @@ int main(void)
 		{
 			printf("\tLisbon -> Barcelona (Lord Godalming, Round 1)\n");
 			int pathLength = -1;
-			printf("The path length is %d\n", pathLength);
+			
 			PlaceId *path = HvGetShortestPathTo(hv, PLAYER_LORD_GODALMING,
 			                                    BARCELONA, &pathLength);
+			printf("The path length is %d\n", pathLength);
 			
 			
 			assert(pathLength == 2);
