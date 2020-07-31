@@ -304,7 +304,7 @@ int main(void)
 			
 			PlaceId *path = HvGetShortestPathTo(hv, PLAYER_LORD_GODALMING,
 			                                    BARCELONA, &pathLength);
-			printf("The path length is %d\n", pathLength);
+			// printf("The path length is %d\n", pathLength);
 			
 			
 			assert(pathLength == 2);
@@ -409,7 +409,7 @@ int main(void)
 		int numLocs = -1;
 		PlaceId *locs = HvWhereCanTheyGoByType(hv, PLAYER_LORD_GODALMING,
 		                                       false, true, false, &numLocs);
-		printf("Numlocs is %d\n",numLocs);
+		// printf("Numlocs is %d\n",numLocs);
 		
 		
 		assert(numLocs == 5);

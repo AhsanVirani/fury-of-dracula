@@ -6,8 +6,9 @@
 // 2017-12-01	v1.1	Team Dracula <cs2521@cse.unsw.edu.au>
 // 2018-12-31	v2.0	Team Dracula <cs2521@cse.unsw.edu.au>
 // 2020-07-10   v3.0    Team Dracula <cs2521@cse.unsw.edu.au>
-//
+// 2020-07-31	v4.0	Team Ahsan-Aryaman-Michael-Vishnu 
 ////////////////////////////////////////////////////////////////////////
+
 
 #include <assert.h>
 #include <stdbool.h>
@@ -21,19 +22,6 @@
 #include "Places.h"
 #include "Queue.h"
 
-#define MAX 70
-
-int intArray[MAX];
-int front = 0;
-int rear = -1;
-int itemCount = 0;
-
-int peek();
-bool isEmpty(); 
-bool isFull(); 
-int size();
-void insert(int data);
-int removeData();
 
 // add your own #includes here
 
@@ -132,7 +120,7 @@ PlaceId HvGetLastKnownDraculaLocation(HunterView hv, Round *round)
 	PlaceId finalPlace = NOWHERE;
 
 	for (int i = 0; i < result; i++) {
-		// printf("the result is %d\n", placeResult[i]);
+	
 		
 		if (placeResult[i] != CITY_UNKNOWN) {
 			finalPlace = placeResult[i];
@@ -153,68 +141,81 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
     int connNum = MapNumPlaces(tempMap);
     int *dist = calloc (connNum, sizeof(int));
 
-	PlaceId *visited = calloc (connNum, sizeof(PlaceId));
+	int *visited = calloc (connNum, sizeof(int));
     PlaceId *prevPlace = malloc (connNum * sizeof(PlaceId));
     int i;
     for (i = 0; i < connNum; i++) {
         prevPlace[i] = NOWHERE;
     }
 
+
 	PlaceId start = GvGetPlayerLocation(hv->gView, hunter);
     Q q = newQueue();
     QueueJoin(q, start);
+
     prevPlace[start] = NOWHERE;
     Round round = GvGetRound(hv->gView);
 
+	visited[start] = 1;
 	bool found = false;
-    while (!QueueIsEmpty(q)) {
-		// printf("The queue is\n");
-		// showQueue(q);
-        PlaceId curr = QueueLeave(q);
-        if (found) break;
-        int num;
-        PlaceId *next = GvGetReachable(hv->gView,hunter,round,curr,&num);
-        round++;
 
-        const char *namecurr = placeIdToName(curr);
-        printf("$$$$The current place is %s$$$$$$$\n", namecurr);
+
+    while (!QueueIsEmpty(q)) {
+		
+        PlaceId curr = QueueLeave(q);
+		int num;
+		PlaceId *next = NULL;
+
+		if (curr == start) {
+			if (found) break;
+			next = GvGetReachable(hv->gView,hunter,round,curr,&num);
+		} else {
+			if (found) break;
+			// printf("The round is %d\n", round);
+        	next = GvGetReachable(hv->gView,hunter,round + dist[curr],curr,&num);
+		}
+        
+        // const char *namecurr = placeIdToName(curr);
+        // printf("$$$$The current place is %s$$$$$$$\n", namecurr);
 
         for (int i = 0; i < num; i++) {
 			if (next[i] == curr) i++;
-            if (!visited[next[i]]) {
+            if (visited[next[i]] == 0) {
                 visited[next[i]] = 1;
-				const char *temp = placeIdToName(next[i]);
-				printf("****The Place is %s******\n", temp);
+				// const char *temp = placeIdToName(next[i]);
+				// printf("****The Place is %s******\n", temp);
                 QueueJoin(q,next[i]);
                 dist[next[i]] = dist[curr] + 1;
                 prevPlace[next[i]] = curr;
                 if (next[i] == dest) {
                     found = true;
+					
                     break;
+					
                 } 
             }
+			else {;}
 
         }
         free(next);
     }
 
 
-	printf("the pathlength is %d\n", dist[dest]);
-
 	if (dist[dest] > 0) {
         int index = dist[dest] - 1;
         
         PlaceId *path = calloc(index, sizeof(PlaceId));
         path[index] = dest;
-        printf("**********The place is %d*********\n", path[index]);
-        // printf("Hello\n");
+        // const char *temp = placeIdToName(path[index]);
+		// 		printf("****The Place is %s******\n", temp);
         
         index--;
         PlaceId destcpy = dest;
         
         while (index >= 0) {
             path[index] = prevPlace[destcpy];
-            printf("**********The place is %d*********\n", path[index]);
+			// temp = placeIdToName(path[index]);
+			// 	printf("****The Place is %s******\n", temp);
             destcpy = prevPlace[destcpy];
             index--;
         }
@@ -314,43 +315,3 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
 // Your own interface functions
 
 // TODO
-
-int peek() {
-   return intArray[front];
-}
-
-bool isEmpty() {
-   return itemCount == 0;
-}
-
-bool isFull() {
-   return itemCount == MAX;
-}
-
-int size() {
-   return itemCount;
-}  
-
-void insert(int data) {
-
-   if(!isFull()) {
-	
-      if(rear == MAX-1) {
-         rear = -1;            
-      }       
-
-      intArray[++rear] = data;
-      itemCount++;
-   }
-}
-
-int removeData() {
-   int data = intArray[front++];
-	
-   if(front == MAX) {
-      front = 0;
-   }
-	
-   itemCount--;
-   return data;  
-}
