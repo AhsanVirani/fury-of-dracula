@@ -27,6 +27,7 @@
 #define MAX_CONNECTION 100
 
 // global declarations
+
 char abbre[ABBREVIATION_SIZE];
 char move[MOVE_SIZE];	
 PlaceId **PlayersPlaceHist;

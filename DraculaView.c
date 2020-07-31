@@ -118,6 +118,7 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
             doubleBack = true;
         }
     }
+    free(trail);
     
     // If Dracula has not used HIDE and is not at sea, replace currentLocation with HIDE
     if (hide == false && placeIdToType(currentLocation) != SEA) {
@@ -208,6 +209,7 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
             doubleBack = true;
         }
     }
+    free(trail);
 
     // Remove currentLocation if illegal (already used hide or at sea + already used DB)
     PlaceType locationType = placeIdToType(GvGetPlayerLocation(dv->gv, PLAYER_DRACULA));
