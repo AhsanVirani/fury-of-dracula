@@ -23,6 +23,12 @@
 #include "Places.h"
 #include "testUtils.h"
 
+#define green() printf("\033[1;32m")
+#define purple() printf("\033[0;35m")
+#define resetColour() printf("\033[0m")
+
+void passed();
+
 int main(void)
 {
 	{///////////////////////////////////////////////////////////////////
@@ -494,6 +500,205 @@ int main(void)
 		printf("Test passed!\n");
 	}
 
+	{///////////////////////////////////////////////////////////////////
+		printf("\n");
+		printf("\n");
+		printf("////////////////////////////////////////////////////////////////////\n");
+		printf("//////////////////////////    MY TESTS    //////////////////////////\n");
+		printf("////////////////////////////////////////////////////////////////////\n");
+		printf("\n");
+
+		purple();
+		printf("Custom Game State Test\n");
+		resetColour();
+		char *trail =
+			"GED.... SGE.... HZU.... MCA.... DCF.V.. "
+			"GMN.... SCFVD.. HGE.... MLS.... DBOT... "
+			"GLO.... SMR.... HCF.... MMA.... DTOT... "
+			"GPL.... SMS.... HMR.... MGR.... DBAT... "
+			"GLO.... SBATD.. HMS.... MMA.... DSRT... "
+			"GPL.... SSJ.... HBA.... MGR.... DALT... "
+			"GPL.... SSJ.... HBA.... MGR.... DMAT... "
+			"GLO.... SBE.... HMS.... MMATD..";
+
+		
+		Message messages[24] = {};
+		GameView gv = GvNew(trail, messages);
+		{	
+			assert(GvGetRound(gv) == 7);
+			assert(GvGetPlayer(gv) == PLAYER_DRACULA);
+			assert(GvGetScore(gv) == 353);
+			assert(GvGetPlayerLocation(gv, PLAYER_LORD_GODALMING) == LONDON);
+			assert(GvGetPlayerLocation(gv, PLAYER_DR_SEWARD) == BELGRADE);
+			assert(GvGetPlayerLocation(gv, PLAYER_VAN_HELSING) == MEDITERRANEAN_SEA);
+			assert(GvGetPlayerLocation(gv, PLAYER_MINA_HARKER) == MADRID);
+			assert(GvGetPlayerLocation(gv, PLAYER_DRACULA) == MADRID);
+			assert(GvGetVampireLocation(gv) == NOWHERE);
+		}
+		passed();
+
+		purple();
+		printf("Moves Custom Test\n");
+		resetColour();
+
+					
+		{
+			int numMoves = 0; bool canFree = false;
+			PlaceId *moves = GvGetMoveHistory(gv, PLAYER_VAN_HELSING,
+			                                  &numMoves, &canFree);
+			assert(numMoves == 8);
+			assert(moves[0] == ZURICH);
+			assert(moves[1] == GENEVA);
+			assert(moves[2] == CLERMONT_FERRAND);
+			assert(moves[3] == MARSEILLES);
+			assert(moves[4] == MEDITERRANEAN_SEA);
+			assert(moves[5] == BARCELONA);
+			assert(moves[6] == BARCELONA);
+			assert(moves[7] == MEDITERRANEAN_SEA);
+			if (canFree) free(moves);
+		}	
+
+		passed();
+		
+		purple();
+		printf("Traps Custom Test\n");
+		resetColour();
+
+		int numTraps = 0;
+		PlaceId *traps = GvGetTrapLocations(gv, &numTraps);
+		assert(numTraps == 4);
+		sortPlaces(traps, numTraps);
+		assert(traps[0] == ALICANTE && traps[1] == BORDEAUX 
+					&& traps[2] == SARAGOSSA && traps[3] == TOULOUSE);
+		free(traps);
+		GvFree(gv);
+
+		passed();
+	}
+
+	{///////////////////////////////////////////////////////////////////
+		
+		purple();
+		printf("Game State Test 2\n");
+		resetColour();
+		char *trail = 
+			"GMN.... SPL.... HAM.... MPA.... DGA.V.. "
+			"GLV.... SLO.... HNS.... MST.... DHIT... "
+			"GIR.... SPL.... HAO.... MZU.... DCDT... "
+			"GSW.... SLO.... HNS.... MFR.... DKLT... "
+			"GLV.... SPL.... HAO.... MZU.... DBCT... "
+			"GSW.... SLO.... HNS.... MMR....";
+
+		Message messages[24] = {};
+		GameView gv = GvNew(trail, messages);
+		{	
+			assert(GvGetRound(gv) == 5);
+			assert(GvGetPlayer(gv) == PLAYER_DRACULA);
+			assert(GvGetScore(gv) == 361);
+			assert(GvGetPlayerLocation(gv, PLAYER_LORD_GODALMING) == SWANSEA);
+			assert(GvGetPlayerLocation(gv, PLAYER_DR_SEWARD) == LONDON);
+			assert(GvGetPlayerLocation(gv, PLAYER_VAN_HELSING) == NORTH_SEA);
+			assert(GvGetPlayerLocation(gv, PLAYER_MINA_HARKER) == MARSEILLES);
+			assert(GvGetPlayerLocation(gv, PLAYER_DRACULA) == BUCHAREST);
+			assert(GvGetHealth(gv, PLAYER_DRACULA) == 50);
+			assert(GvGetVampireLocation(gv) == GALATZ);
+		}
+		passed();
+
+		purple();
+		printf("Moves Custom Test 2\n");
+		resetColour();
+
+					
+		{
+			int numMoves = 4; int numReturnedMoves; bool canFree = false;
+			PlaceId *moves = GvGetLastMoves(gv, PLAYER_DRACULA,
+			                                  numMoves, &numReturnedMoves, &canFree);
+			assert(numReturnedMoves == 4);
+			assert(moves[0] == HIDE);
+			assert(moves[1] == CASTLE_DRACULA);
+			assert(moves[2] == KLAUSENBURG);
+			assert(moves[3] == BUCHAREST);
+
+			if (canFree) free(moves);
+		}	
+
+		passed();
+
+		purple();
+		printf("Locations Custom Test\n");
+		resetColour();
+
+					
+		{
+			int numLocs = -1; bool canFree = false;
+			PlaceId *locs = GvGetLocationHistory(gv, PLAYER_DR_SEWARD,
+			                                  &numLocs, &canFree);
+			assert(numLocs == 6);
+			assert(locs[0] == PLYMOUTH);
+			assert(locs[1] == LONDON);
+			assert(locs[2] == PLYMOUTH);
+			assert(locs[3] == LONDON);
+			assert(locs[4] == PLYMOUTH);
+			assert(locs[5] == LONDON);
+
+			if (canFree) free(locs);
+		}	
+
+		passed();
+
+		{
+			purple();
+			printf("Connections Custom Testing\n");
+			resetColour();
+			
+			int numLocs = -1;
+			PlaceId *locs = GvGetReachable(gv, PLAYER_DRACULA,
+				                             5, BUCHAREST, &numLocs);
+			
+			assert(numLocs == 6);
+			sortPlaces(locs, numLocs);
+			assert(locs[0] == BELGRADE);
+			assert(locs[1] == BUCHAREST);
+			assert(locs[2] == CONSTANTA);
+			assert(locs[3] == GALATZ);
+			assert(locs[4] == KLAUSENBURG);
+			assert(locs[5] == SOFIA);
+
+			free(locs);
+		}
+		
+		passed();
+		
+		{
+			purple();
+			printf("Connections Custom Testing 2\n");
+			resetColour();
+			
+			int numLocs = -1;
+			PlaceId *locs = GvGetReachableByType(gv, PLAYER_LORD_GODALMING,
+				                             5, SWANSEA, false, true, false, &numLocs);
+			
+			assert(numLocs == 2);
+			sortPlaces(locs, numLocs);
+			assert(locs[0] == LONDON);
+			assert(locs[1] == SWANSEA);
+
+			free(locs);
+		}
+		GvFree(gv);
+		passed();
+	}
+	
+
 	return EXIT_SUCCESS;
+}
+
+
+void passed() {
+    green();
+    printf("Test passed!\n");
+    printf("\n");
+    resetColour();
 }
 
