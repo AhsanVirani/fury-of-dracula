@@ -477,5 +477,28 @@ int main(void)
 		printf("Test passed!\n");	
 	}
 	
+	{///////////////////////////////////////////////////////////////////
+		
+		purple();
+		printf("Hunter View Test 1\n");
+		resetColour();
+		char *trail = 
+			"GMN.... SPL.... HAM.... MPA.... DGA.V.. "
+			"GLV.... SLO.... HNS.... MST.... DHIT... "
+			"GIR.... SPL.... HAO.... MZU.... DCDT... "
+			"GSW.... SLO.... HNS.... MFR.... DKLT... "
+			"GLV.... SPL.... HAO.... MZU.... DBCT... "
+			"GSW.... SLO.... HNS.... MMR....";
+
+		
+		Message messages[24] = {};
+		HunterView gv = HvNew(trail, messages);
+	
 	return EXIT_SUCCESS;
+
+void passed() {
+    green();
+    printf("Test passed!\n");
+    printf("\n");
+    resetColour();
 }
