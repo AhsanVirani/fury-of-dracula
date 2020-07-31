@@ -24,6 +24,11 @@
 #include "testUtils.h"
 #include "Queue.h"
 
+#define green() printf("\033[1;32m")
+#define purple() printf("\033[0;35m")
+#define resetColour() printf("\033[0m")
+void passed();
+
 int main(void)
 {
 	{///////////////////////////////////////////////////////////////////
@@ -476,29 +481,34 @@ int main(void)
 		HvFree(hv);
 		printf("Test passed!\n");	
 	}
-	
-	{///////////////////////////////////////////////////////////////////
-		
-		purple();
-		printf("Hunter View Test 1\n");
-		resetColour();
-		char *trail = 
-			"GMN.... SPL.... HAM.... MPA.... DGA.V.. "
-			"GLV.... SLO.... HNS.... MST.... DHIT... "
-			"GIR.... SPL.... HAO.... MZU.... DCDT... "
-			"GSW.... SLO.... HNS.... MFR.... DKLT... "
-			"GLV.... SPL.... HAO.... MZU.... DBCT... "
-			"GSW.... SLO.... HNS.... MMR....";
-
-		
-		Message messages[24] = {};
-		HunterView gv = HvNew(trail, messages);
-	
 	return EXIT_SUCCESS;
-
-void passed() {
-    green();
-    printf("Test passed!\n");
-    printf("\n");
-    resetColour();
 }
+
+
+	
+// 	{///////////////////////////////////////////////////////////////////
+		
+// 		purple();
+// 		printf("Hunter View Test 1\n");
+// 		resetColour();
+// 		char *trail = 
+// 			"GMN.... SPL.... HAM.... MPA.... DGA.V.. "
+// 			"GLV.... SLO.... HNS.... MST.... DHIT... "
+// 			"GIR.... SPL.... HAO.... MZU.... DCDT... "
+// 			"GSW.... SLO.... HNS.... MFR.... DKLT... "
+// 			"GLV.... SPL.... HAO.... MZU.... DBCT... "
+// 			"GSW.... SLO.... HNS.... MMR....";
+
+		
+// 		Message messages[24] = {};
+// 		HunterView gv = HvNew(trail, messages);
+	
+	
+// }
+
+// void passed() {
+//     green();
+//     printf("Test passed!\n");
+//     printf("\n");
+//     resetColour();
+// }
