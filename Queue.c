@@ -1,5 +1,16 @@
-// Q.c ... implementation of Q ADT
-// Written by John Shepherd, March 2013
+////////////////////////////////////////////////////////////////////////
+// COMP2521 20T2 ... the Fury of Dracula
+// Queue.c: Implementation of Queue ADT
+//
+//   
+// Written by Team Ahsan-Aryaman-Michael-Vishnu 
+// July 2020
+//  
+//
+// Adapted from Queue.c: Implementation of Queue ADT
+// Written by John Sheperd, March 2013
+////////////////////////////////////////////////////////////////////////
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,21 +54,7 @@ void dropQueue(Q Q)
 	free(Q);
 }
 
-// display as 3 > 5 > 4 > ...
-void showQueue(Q Q)
-{
-	Node *curr;
-	assert(Q != NULL);
-	// free list nodes
-	curr = Q->head;
-	while (curr != NULL) {
-		// ItemShow(curr->value);
-		if (curr->next != NULL)
-			printf(">");
-		curr = curr->next;
-	}
-	printf("\n");
-}
+
 
 // add item at end of Q 
 void QueueJoin(Q Q, PlaceId loc)
@@ -77,8 +74,7 @@ void QueueJoin(Q Q, PlaceId loc)
 // remove item from front of Q
 PlaceId QueueLeave(Q Q)
 {
-	assert(Q != NULL);
-	assert(Q->head != NULL);
+	assert(Q != NULL && Q->head != NULL);
 	PlaceId loc = Q->head->place;
 	Node *old = Q->head;
 	Q->head = old->next;
