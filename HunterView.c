@@ -122,7 +122,7 @@ PlaceId HvGetLastKnownDraculaLocation(HunterView hv, Round *round)
 	for (int i = 0; i < result; i++) {
 	
 		
-		if (placeResult[i] != CITY_UNKNOWN) {
+		if ((placeResult[i] != CITY_UNKNOWN) && (placeResult[i] != SEA_UNKNOWN)) {
 			finalPlace = placeResult[i];
 			count++;
 		}	
