@@ -28,10 +28,10 @@
 
 // global declarations
 char abbre[ABBREVIATION_SIZE];
-char move[MOVE_SIZE];
+char move[MOVE_SIZE];	
 PlaceId **PlayersPlaceHist;
 PlaceId *moveHistory;
-PlaceId *trap; // work done after trap function. Free this
+PlaceId *trap; 
 PlaceId *visited;
 PlaceId *connectionArr;
 
@@ -720,7 +720,6 @@ int addRailConnection(GameView gv, PlaceId from, int RailMoves, int pos)
 {
 	if(!InArray(from)) {
 		connectionArr[pos] = from;
-		printf("%s\n", placeIdToName(connectionArr[pos]));
 		makeVisited(from);
 		pos++;
 	}

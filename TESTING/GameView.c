@@ -714,7 +714,10 @@ int addRailConnection(GameView gv, PlaceId from, int RailMoves, int pos)
 {
 	if(!InArray(from)) {
 		connectionArr[pos] = from;
+<<<<<<< HEAD
 		// printf("%s\n", placeIdToName(connectionArr[pos]));
+=======
+>>>>>>> 452b0b5dce1372590a73b2b1d03011748672f9ae
 		makeVisited(from);
 		pos++;
 	}
@@ -855,15 +858,11 @@ void white_box() {
 	GameView gv = GvNew(pastPlays, NULL);
 
 	int *numReturnedLocs = malloc(sizeof(int));
-	GvGetReachableByType(gv, 0, 0,
-                              EDINBURGH, true,true,
-                              true, numReturnedLocs);
+	GvGetReachable(gv, 0, 0,BUCHAREST, numReturnedLocs);
 	printf("%d\n", *numReturnedLocs);
-	printf("%s\n", placeIdToName(connectionArr[1]));
-	//printf("%s %s\n", placeIdToName(PlayersPlaceHist[4][0]), placeIdToName(PlayersPlaceHist[4][1]));
-	//printf("%s\n", placeIdToName(GvGetPlayerLocation(gv, 4)));
-	//printf("%s\n", placeIdToName(connectionArr[0]));
-
+	printf("%s\n", placeIdToName(connectionArr[3]));	
+	printf("%s\n", placeIdToName(connectionArr[4]));
+	printf("%s\n", placeIdToName(connectionArr[5]));
 
 }
 
