@@ -28,8 +28,7 @@
 // TODO: ADD YOUR OWN STRUCTS HERE
 
 struct hunterView {
-	// TODO: ADD FIELDS HERE
-	//DONE
+
 	GameView gView;
 };
 
@@ -38,7 +37,7 @@ struct hunterView {
 
 HunterView HvNew(char *pastPlays, Message messages[])
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	
 	HunterView new = malloc(sizeof(*new));
 	if (new == NULL) {
 		fprintf(stderr, "Couldn't allocate HunterView!\n");
@@ -52,8 +51,7 @@ HunterView HvNew(char *pastPlays, Message messages[])
 
 void HvFree(HunterView hv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	//DONE
+
 	GvFree(hv->gView);
 	free(hv);
 }
@@ -63,45 +61,39 @@ void HvFree(HunterView hv)
 
 Round HvGetRound(HunterView hv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	//DONE
+
 	return GvGetRound(hv->gView);
 }
 
 Player HvGetPlayer(HunterView hv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	// DONE
+
 	return GvGetPlayer(hv->gView);
 	
 }
 
 int HvGetScore(HunterView hv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	// DONE	
+
 	return GvGetScore(hv->gView);
 }
 
 int HvGetHealth(HunterView hv, Player player)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	//DONE
+
 	return GvGetHealth(hv->gView, player);
 }
 
 PlaceId HvGetPlayerLocation(HunterView hv, Player player)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	//DONE
+
 	return GvGetPlayerLocation(hv->gView, player);
 	
 }
 
 PlaceId HvGetVampireLocation(HunterView hv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	// DONE
+
 	return GvGetVampireLocation(hv->gView);
 }
 
@@ -110,19 +102,19 @@ PlaceId HvGetVampireLocation(HunterView hv)
 
 PlaceId HvGetLastKnownDraculaLocation(HunterView hv, Round *round)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	*round = 0;
 	int result;
 	int count = -1;
 	bool locBool;
-	PlaceId *placeResult = GvGetLastLocations(hv->gView, PLAYER_DRACULA, 5,
-											  &result, &locBool);
+
+	PlaceId *placeResult = GvGetLocationHistory(hv->gView,PLAYER_DRACULA,
+												&result,&locBool);
+
 	PlaceId finalPlace = NOWHERE;
 
 	for (int i = 0; i < result; i++) {
-	
-		
-		if ((placeResult[i] != CITY_UNKNOWN) && (placeResult[i] != SEA_UNKNOWN)) {
+		if ((placeResult[i] != CITY_UNKNOWN) && 
+			(placeResult[i] != SEA_UNKNOWN)) {
 			finalPlace = placeResult[i];
 			count++;
 		}	
@@ -130,10 +122,17 @@ PlaceId HvGetLastKnownDraculaLocation(HunterView hv, Round *round)
 
 		if (count > 0)
 			*round = count;
+
+		if (locBool) {
+			free(placeResult);
+		}
 	
 	return finalPlace;
 }
 
+// This function implements BFS to get the shortest path
+// from a starting point to the destination
+// This function implements a Queue ADT 
 PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
                              int *pathLength)
 {
@@ -171,8 +170,9 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 			next = GvGetReachable(hv->gView,hunter,round,curr,&num);
 		} else {
 			if (found) break;
-			// printf("The round is %d\n", round);
-        	next = GvGetReachable(hv->gView,hunter,round + dist[curr],curr,&num);
+
+			int currRound = round + dist[curr];
+        	next = GvGetReachable(hv->gView,hunter,currRound,curr,&num);
 		}
         
         // const char *namecurr = placeIdToName(curr);
@@ -195,12 +195,11 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
                 } 
             }
 			else {;}
-
         }
         free(next);
     }
 
-
+	// creates the dynamic array which holds the shortest path
 	if (dist[dest] > 0) {
         int index = dist[dest] - 1;
         
@@ -221,30 +220,13 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
         }
 
         free(dist); free(prevPlace); free(visited); dropQueue(q);
-        
-
         *pathLength = dist[dest];
-
-        // for (int i = 0; i < *pathLength; i++) {
-        //  printf("The path is %d\n", path[i]);
-        // }
-        
         return path;
     }
     
     free(dist); free(visited); free(prevPlace); dropQueue(q);
-    // free(next);
     *pathLength = 0;
     return NULL;
-
-
-
-
-
-
-	
-    
-	return NULL;
 
 }
 
@@ -253,16 +235,12 @@ PlaceId *HvGetShortestPathTo(HunterView hv, Player hunter, PlaceId dest,
 
 PlaceId *HvWhereCanIGo(HunterView hv, int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	// *numReturnedLocs = 0;
-	return HvWhereCanIGoByType(hv,true,true,true,numReturnedLocs);
-	
+	return HvWhereCanIGoByType(hv,true,true,true,numReturnedLocs);	
 }
 
 PlaceId *HvWhereCanIGoByType(HunterView hv, bool road, bool rail,
                              bool boat, int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	*numReturnedLocs = 0;
 	
 	Player hunter = GvGetPlayer(hv->gView);
@@ -272,7 +250,9 @@ PlaceId *HvWhereCanIGoByType(HunterView hv, bool road, bool rail,
 	}	
 	Round round = GvGetRound(hv->gView);
 
-	PlaceId *result = GvGetReachableByType(hv->gView,hunter,round,currentLocation, road,rail,boat,numReturnedLocs);
+	PlaceId *result = GvGetReachableByType(hv->gView,hunter,round,
+										   currentLocation,road,rail,
+										   boat,numReturnedLocs);
 
 	return result;
 }
@@ -280,8 +260,7 @@ PlaceId *HvWhereCanIGoByType(HunterView hv, bool road, bool rail,
 PlaceId *HvWhereCanTheyGo(HunterView hv, Player player,
                           int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	// *numReturnedLocs = 0;
+
 	return HvWhereCanTheyGoByType(hv,player, true,true,true,numReturnedLocs);
 }
 
@@ -289,8 +268,6 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
                                 bool road, bool rail, bool boat,
                                 int *numReturnedLocs)
 {
-	
-	
 	*numReturnedLocs = 0;
 	PlaceId currentLocation = GvGetPlayerLocation(hv->gView, player);
 
@@ -302,16 +279,16 @@ PlaceId *HvWhereCanTheyGoByType(HunterView hv, Player player,
 	Round round = GvGetRound(hv->gView);
 	round++;
 	if (player != PLAYER_DRACULA) {
-		results = GvGetReachableByType(hv->gView,player,round,currentLocation, road,rail,boat,numReturnedLocs);
+		results = GvGetReachableByType(hv->gView,player,round,currentLocation, 
+									   road,rail,boat,numReturnedLocs);
 	} else {
-		results = GvGetReachableByType(hv->gView,player,round,currentLocation, road,false,boat,numReturnedLocs);
+		results = GvGetReachableByType(hv->gView,player,round,currentLocation, 
+									   road,false,boat,numReturnedLocs);
 	}
-
-
 	return results;
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
 
-// TODO
+
