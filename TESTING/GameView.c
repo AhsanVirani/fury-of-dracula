@@ -714,7 +714,7 @@ int addRailConnection(GameView gv, PlaceId from, int RailMoves, int pos)
 {
 	if(!InArray(from)) {
 		connectionArr[pos] = from;
-		printf("%s\n", placeIdToName(connectionArr[pos]));
+		// printf("%s\n", placeIdToName(connectionArr[pos]));
 		makeVisited(from);
 		pos++;
 	}
@@ -829,12 +829,12 @@ PlaceId *GvGetReachableByType(GameView gv, Player player, Round round,
 			}
 			
 			else if(!InArray(c->p)){
-				if(road) {
-					addRoadConnection(c->p, j);
+				if(boat) {
+					addBoatConnection(c->p, j);
 					j++;
 				}
-				else if(boat) {
-					addBoatConnection(c->p, j);
+				else if(road) {
+					addRoadConnection(c->p, j);
 					j++;
 				}
 			}
