@@ -1,0 +1,15 @@
+1) Where to start?
+	Check where Hunters are and start at unusual position, far away, but near sea i.e. port. Place vampire and secure it by traps.
+- Remember to secure vampire as it matures 6th round -> so -13 equals 13 rounds point deduction, which is Huge. Only move far when multiple Hunters
+	approaching and risk of death is high.
+- As Hunters move away from CD, go there and get points. Make use of HI and DB.
+- Staying near Sea will help to not get caught. Also, easy route to CD in case short of points
+
+2) Encounters?
+	When a Hunter is alone and his health is <= 4, Kill him. 
+-	Otherwise, maintain hidden position and no need for encounter.
+-  In case of surrounded by Hunters, run out of moves and Teleport to CASTLE_DRACULA.
+
+3) Every 6th Round when time to Place Vampire
+	- Make sure to get as far from Hunters at 6th Round, so Vampire is placed at well secured Location. Follow this up by multiple traps, and Dracula safeguarding,
+	unless too many Hunters come to rescue.
