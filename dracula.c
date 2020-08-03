@@ -27,22 +27,14 @@ int size;
 static void huntersReach(DraculaView);
 static int InArray(DraculaView, Player);
 static void updateHuntersReach(DraculaView, Player);
-<<<<<<< HEAD
 static int DraculaAI(PlaceId *validMoves, PlaceId draculaReac[], int numReturnedMoves);
 static void draculaStarting(DraculaView);
 static void draculaTeleport();
-=======
-static int DraculaBestMove(PlaceId *validMoves, PlaceId draculaReac[], int numReturnedMoves);
->>>>>>> 06c3deaaaa5ed00e989f540e90491f57d80469ea
-
 
 
 void decideDraculaMove(DraculaView dv)
 {
-<<<<<<< HEAD
 
-=======
->>>>>>> 06c3deaaaa5ed00e989f540e90491f57d80469ea
 	PlaceId draculaReach[DRAC_REACH];
 
 	// initialise the huntersLoc array with NOWEHRE
@@ -50,7 +42,7 @@ void decideDraculaMove(DraculaView dv)
 	for(i = 0; i < MAX_LOCATION; i++)
 		huntersLoc[i] = NOWHERE;
 	size = 0;
-<<<<<<< HEAD
+
 	// initialise the draculaReach array with NOWHERE
 	for(i = 0; i < DRAC_REACH; i++)
 		draculaReach[i] = NOWHERE;
@@ -84,35 +76,7 @@ void decideDraculaMove(DraculaView dv)
 	}		
 	registerBestPlay(placeIdToAbbrev(Moves[0]), "Mwahahahaha");
 	free(Moves);
-=======
 
-	huntersReach(dv);
-
-	// Takes Valid Moves of Dracula and returns array that excludes locations of huntersReach
-	int numReturnedMoves = -1;
-	PlaceId *dracValidMoves = DvGetValidMoves(dv, &numReturnedMoves);
-
-	// Means teleported
-	if(numReturnedMoves == 0) {
-		registerBestPlay("CD", "Mwahahahaha");
-		free(dracValidMoves);
-		return;
-	}
-	// gives the first element in best moves array
-	int nMoves = DraculaBestMove(dracValidMoves, draculaReach, numReturnedMoves);
-	char *abbre;
-	if(nMoves > 0) {
-		abbre = strdup(placeIdToAbbrev(draculaReach[0]));
-		registerBestPlay(abbre, "Mwahahahaha");
-		free(dracValidMoves);
-		free(abbre);		
-		return;
-	}		
-	abbre = strdup(placeIdToAbbrev(dracValidMoves[0]));
-	registerBestPlay(abbre, "Mwahahahaha");
-	free(abbre);
-	free(dracValidMoves);
->>>>>>> 06c3deaaaa5ed00e989f540e90491f57d80469ea
 }
 
 // Fills the array with current location of hunters and places reachable
@@ -123,10 +87,8 @@ void huntersReach(DraculaView dv)
 
 	// insert hunters current location in the array
 	huntersLoc[0] = DvGetPlayerLocation(dv, 0);
-<<<<<<< HEAD
 	size++;
-=======
->>>>>>> 06c3deaaaa5ed00e989f540e90491f57d80469ea
+
 	if(!InArray(dv, 1)) {
 		huntersLoc[1] = DvGetPlayerLocation(dv, 1);
 		size++;
@@ -194,11 +156,7 @@ void updateHuntersReach(DraculaView dv, Player player)
 // Takes valid moves for the Dracula and excludes those in Hunters Reach
 // If no such move i.e. Dracula trapped or no valid moves then returns 0
 static
-<<<<<<< HEAD
 int DraculaAI(PlaceId *validMoves, PlaceId draculaReach[], int numReturnedMoves)
-=======
-int DraculaBestMove(PlaceId *validMoves, PlaceId draculaReach[], int numReturnedMoves)
->>>>>>> 06c3deaaaa5ed00e989f540e90491f57d80469ea
 {
 	int len = 0;
 	int i, j;
@@ -211,7 +169,6 @@ int DraculaBestMove(PlaceId *validMoves, PlaceId draculaReach[], int numReturned
 			draculaReach[len] = validMoves[i];
 			len++;
 		}		
-<<<<<<< HEAD
 	}	
 	return len;
 }
@@ -231,10 +188,4 @@ void draculaTeleport() {
     return;
 }
 
-=======
-	}
-		
-	return len;
-}
 
->>>>>>> 06c3deaaaa5ed00e989f540e90491f57d80469ea
