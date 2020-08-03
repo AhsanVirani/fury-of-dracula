@@ -13,8 +13,51 @@
 #include "DraculaView.h"
 #include "Game.h"
 
+// Registers best play for when Dracula has not made a move
+void draculaStarting(DraculaView dv);
+// Registers Teleport when Dracula has no valid moves
+void draculaTeleport();
+// AI to register best play for Dracula
+void draculaAI(DraculaView dv, PlaceId currentLocation, PlaceId *validMoves);
+
+
 void decideDraculaMove(DraculaView dv)
 {
-	// TODO: Replace this with something better!
+    int numReturnedMoves;
+    PlaceId *moves = DvGetValidMoves(dv, &numReturnedMoves);
+    PlaceId currentLocation = DvGetPlayerLocation(dv, PLAYER_DRACULA);
+
+    // if Dracula has not made a move
+    if (currentLocation == NOWHERE) {
+        draculaStarting(dv);
+    // if Dracula has no valid moves, teleport
+    } else if (numReturnedMoves == 0) {
+        draculaTeleport();
+    // otherwise register the first valid move to meet time-constraint
+    // and implement AI to select the best move
+    } else {
+	    registerBestPlay(placeIdToAbbrev(moves[0]), "Mwahahahaha");
+        draculaAI(dv, currentLocation, moves);
+    }
+    free(moves);
+
+    return;
+}
+
+// Registers best play for when Dracula has not made a move
+void draculaStarting(DraculaView dv) {
+    // TODO: Replace this with something better!
 	registerBestPlay("CD", "Mwahahahaha");
+}
+
+// Registers Teleport when Dracula has no valid moves
+void draculaTeleport() {
+    registerBestPlay("TP", "Mwahahahaha");
+    return;
+}
+
+// AI to register best play for Dracula
+void draculaAI(DraculaView dv, PlaceId currentLocation, PlaceId *validMoves) {
+
+    return;    
 }
