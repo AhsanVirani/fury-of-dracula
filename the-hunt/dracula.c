@@ -58,24 +58,24 @@ void decideDraculaMove(DraculaView dv)
 
 
 	// Takes Valid Moves of Dracula and returns array that excludes locations of huntersReach
-	int numReturnedMoves = -1;
-	PlaceId *Moves = DvGetValidMoves(dv, &numReturnedMoves);
+	int numReturnedLocs = -1;
+	PlaceId *Locs = DvWhereCanIGo(dv, &numReturnedLocs);
 
 	// Means teleported
-	if(numReturnedMoves == 0) {
+	if(numReturnedLocs == 0) {
 		draculaTeleport();
-		free(Moves);
+		free(Locs);
 		return;
 	}
 	// gives the first element in best moves array
-	int nMoves = DraculaAI(Moves, draculaReach, numReturnedMoves);
-	if(nMoves > 0) {
+	int nLocs = DraculaAI(Locs, draculaReach, numReturnedLocs);
+	if(nLocs > 0) {
 		registerBestPlay(placeIdToAbbrev(draculaReach[0]), "Mwahahahaha");
-		free(Moves);	
+		free(Locs);	
 		return;
 	}		
-	registerBestPlay(placeIdToAbbrev(Moves[0]), "Mwahahahaha");
-	free(Moves);
+	registerBestPlay(placeIdToAbbrev(Locs[0]), "Mwahahahaha");
+	free(Locs);
 }
 
 // Fills the array with current location of hunters and places reachable

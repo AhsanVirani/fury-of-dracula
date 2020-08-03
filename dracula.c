@@ -24,17 +24,18 @@ PlaceId huntersLoc[MAX_LOCATION];
 int size;
 
 // Static Function Declarations
-static void huntersReach(DraculaView);
+static int huntersReach(DraculaView);
 static int InArray(DraculaView, Player);
 static void updateHuntersReach(DraculaView, Player);
 static int DraculaAI(PlaceId *validMoves, PlaceId draculaReac[], int numReturnedMoves);
-static void draculaStarting(DraculaView);
+static void draculaStarting();
 static void draculaTeleport();
+static PlaceId DraculaStayAway(PlaceId *, int, int);
 
 
 void decideDraculaMove(DraculaView dv)
 {
-
+	// array will hold locations from away from hunters reach
 	PlaceId draculaReach[DRAC_REACH];
 
 	// initialise the huntersLoc array with NOWEHRE
@@ -48,7 +49,8 @@ void decideDraculaMove(DraculaView dv)
 		draculaReach[i] = NOWHERE;
 
 	// Fills the huntersLoc array with current and reachable locations of all hunters
-	huntersReach(dv);
+	// Returns the len for current Locations of Hunters
+	int currentLocation = huntersReach(dv);
 
 	// If Round 0 Play anything for testing
 	if(DvGetRound(dv) == 0) {
@@ -58,33 +60,40 @@ void decideDraculaMove(DraculaView dv)
 
 
 	// Takes Valid Moves of Dracula and returns array that excludes locations of huntersReach
-	int numReturnedMoves = -1;
-	PlaceId *Moves = DvGetValidMoves(dv, &numReturnedMoves);
+	int numReturnedLocs = -1;
+	// Going to Sea costs dracula 2 pts, so avoid if can
+	PlaceId *Locs = DvWhereCanIGoByType(dv, true, false, &numReturnedLocs);
+	// Include if no choice
+	if(Locs == 0) {
+		Locs = DvWhereCanIGo(dv, &numReturnedLocs);
+	}
 
 	// Means teleported
-	if(numReturnedMoves == 0) {
+	if(numReturnedLocs == 0) {
 		draculaTeleport();
-		free(Moves);
+		free(Locs);
 		return;
 	}
 	// gives the first element in best moves array
-	int nMoves = DraculaAI(Moves, draculaReach, numReturnedMoves);
-	if(nMoves > 0) {
+	int nLocs = DraculaAI(Locs, draculaReach, numReturnedLocs);
+	if(nLocs > 0) {
 		registerBestPlay(placeIdToAbbrev(draculaReach[0]), "Mwahahahaha");
-		free(Moves);	
+		free(Locs);	
 		return;
-	}		
-	registerBestPlay(placeIdToAbbrev(Moves[0]), "Mwahahahaha");
-	free(Moves);
+	}
+	// If no place in draculaReach then choose location not a current location.
+	PlaceId Far = DraculaStayAway(Locs, numReturnedLocs, currentLocation);	
+	registerBestPlay(placeIdToAbbrev(Far), "Mwahahahaha");
+	free(Locs);
 
 }
 
 // Fills the array with current location of hunters and places reachable
 static
-void huntersReach(DraculaView dv)
+int huntersReach(DraculaView dv)
 {
 	assert(dv != NULL);
-
+	int len = 0;
 	// insert hunters current location in the array
 	huntersLoc[0] = DvGetPlayerLocation(dv, 0);
 	size++;
@@ -101,11 +110,14 @@ void huntersReach(DraculaView dv)
 		huntersLoc[3] = DvGetPlayerLocation(dv, 3);
 		size++;
 	}
+	len = size;
 	// Insert places reachable by the hunters in the array
 	updateHuntersReach(dv, 0);
 	updateHuntersReach(dv, 1);
 	updateHuntersReach(dv, 2);
 	updateHuntersReach(dv, 3);
+	
+	return len;
 }
 
 static
@@ -176,9 +188,27 @@ int DraculaAI(PlaceId *validMoves, PlaceId draculaReach[], int numReturnedMoves)
 // Registers best play for when Dracula has not made a move
 // Make sure to start where the Hunters not
 static
-void draculaStarting(DraculaView dv) {
-    // TODO: Replace this with something better!
-	registerBestPlay("CD", "Mwahahahaha");
+void draculaStarting() 
+{	
+	// Start anywhere not sea or in Hunters Reach
+	PlaceId start, bestStart;
+	int j;
+	for(start = MIN_REAL_PLACE; start <= MAX_REAL_PLACE; start++) {
+		for(j = 0; j < size; j++) {
+			if(start == huntersLoc[j])
+				break;
+		}	
+		// Means that start atleast not in Hunters Reach
+		if(size == j)
+			bestStart = start;
+		// Check if not sea
+		if(!placeIsSea(start)) {
+			bestStart = start;
+			break;
+		}
+	}
+
+	registerBestPlay(placeIdToAbbrev(bestStart), "Mwahahahaha");
 }
 
 // Registers Teleport when Dracula has no valid moves
@@ -186,6 +216,23 @@ static
 void draculaTeleport() {
     registerBestPlay("TP", "Mwahahahaha");
     return;
+}
+
+static
+PlaceId DraculaStayAway(PlaceId *Locs, int numReturnedLocs, int len)
+{
+	int i, j;
+	for(i = 0; i < numReturnedLocs; i++) {
+		for(j = 0; j < len; j++) {
+			if(Locs[i] == huntersLoc[j])
+				break;
+		}
+		// means location not a current location of hunter
+		if(j == len)
+			return Locs[i];
+	}
+	// All locations current location so just return any
+	return Locs[0];
 }
 
 
