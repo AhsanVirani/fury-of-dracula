@@ -22,7 +22,7 @@ LIBS =
 all: $(BINS)
 
 dracula: playerDracula.o dracula.o DraculaView.o $(OBJS) $(LIBS)
-hunter: playerHunter.o hunter.o HunterView.o $(OBJS) $(LIBS)
+hunter: playerHunter.o hunter.o HunterView.o Queue.c $(OBJS) $(LIBS)
 
 playerDracula.o: player.c dracula.h Game.h DraculaView.h GameView.h Places.h
 	$(CC) $(CFLAGS) -DI_AM_DRACULA -c $< -o $@
@@ -38,6 +38,7 @@ Map.o: Map.c Map.h Places.h
 Places.o: Places.c Places.h
 
 # if you use other ADTs, add dependencies for them here
+Queue.o : Queue.c Queue.h Places.h
 
 .PHONY: clean
 clean:

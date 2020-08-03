@@ -27,12 +27,15 @@ int size;
 static void huntersReach(DraculaView);
 static int InArray(DraculaView, Player);
 static void updateHuntersReach(DraculaView, Player);
-static int DraculaBestMove(PlaceId *validMoves, PlaceId draculaReac[], int numReturnedMoves);
+static int DraculaAI(PlaceId *validMoves, PlaceId draculaReac[], int numReturnedMoves);
+static void draculaStarting(DraculaView);
+static void draculaTeleport();
 
 
 
 void decideDraculaMove(DraculaView dv)
 {
+
 	PlaceId draculaReach[DRAC_REACH];
 
 	// initialise the huntersLoc array with NOWEHRE
@@ -40,33 +43,39 @@ void decideDraculaMove(DraculaView dv)
 	for(i = 0; i < MAX_LOCATION; i++)
 		huntersLoc[i] = NOWHERE;
 	size = 0;
+	// initialise the draculaReach array with NOWHERE
+	for(i = 0; i < DRAC_REACH; i++)
+		draculaReach[i] = NOWHERE;
 
+	// Fills the huntersLoc array with current and reachable locations of all hunters
 	huntersReach(dv);
+
+	// If Round 0 Play anything for testing
+	if(DvGetRound(dv) == 0) {
+        draculaStarting(dv);
+		return;
+	}
+
 
 	// Takes Valid Moves of Dracula and returns array that excludes locations of huntersReach
 	int numReturnedMoves = -1;
-	PlaceId *dracValidMoves = DvGetValidMoves(dv, &numReturnedMoves);
+	PlaceId *Moves = DvGetValidMoves(dv, &numReturnedMoves);
 
 	// Means teleported
 	if(numReturnedMoves == 0) {
-		registerBestPlay("CD", "Mwahahahaha");
-		free(dracValidMoves);
+		draculaTeleport();
+		free(Moves);
 		return;
 	}
 	// gives the first element in best moves array
-	int nMoves = DraculaBestMove(dracValidMoves, draculaReach, numReturnedMoves);
-	char *abbre;
+	int nMoves = DraculaAI(Moves, draculaReach, numReturnedMoves);
 	if(nMoves > 0) {
-		abbre = strdup(placeIdToAbbrev(draculaReach[0]));
-		registerBestPlay(abbre, "Mwahahahaha");
-		free(dracValidMoves);
-		free(abbre);		
+		registerBestPlay(placeIdToAbbrev(draculaReach[0]), "Mwahahahaha");
+		free(Moves);	
 		return;
 	}		
-	abbre = strdup(placeIdToAbbrev(dracValidMoves[0]));
-	registerBestPlay(abbre, "Mwahahahaha");
-	free(abbre);
-	free(dracValidMoves);
+	registerBestPlay(placeIdToAbbrev(Moves[0]), "Mwahahahaha");
+	free(Moves);
 }
 
 // Fills the array with current location of hunters and places reachable
@@ -77,6 +86,7 @@ void huntersReach(DraculaView dv)
 
 	// insert hunters current location in the array
 	huntersLoc[0] = DvGetPlayerLocation(dv, 0);
+	size++;
 	if(!InArray(dv, 1)) {
 		huntersLoc[1] = DvGetPlayerLocation(dv, 1);
 		size++;
@@ -144,7 +154,7 @@ void updateHuntersReach(DraculaView dv, Player player)
 // Takes valid moves for the Dracula and excludes those in Hunters Reach
 // If no such move i.e. Dracula trapped or no valid moves then returns 0
 static
-int DraculaBestMove(PlaceId *validMoves, PlaceId draculaReach[], int numReturnedMoves)
+int DraculaAI(PlaceId *validMoves, PlaceId draculaReach[], int numReturnedMoves)
 {
 	int len = 0;
 	int i, j;
@@ -157,9 +167,22 @@ int DraculaBestMove(PlaceId *validMoves, PlaceId draculaReach[], int numReturned
 			draculaReach[len] = validMoves[i];
 			len++;
 		}		
-	}
-		
+	}	
 	return len;
 }
 
+// Registers best play for when Dracula has not made a move
+// Make sure to start where the Hunters not
+static
+void draculaStarting(DraculaView dv) {
+    // TODO: Replace this with something better!
+	registerBestPlay("CD", "Mwahahahaha");
+}
+
+// Registers Teleport when Dracula has no valid moves
+static
+void draculaTeleport() {
+    registerBestPlay("TP", "Mwahahahaha");
+    return;
+}
 
