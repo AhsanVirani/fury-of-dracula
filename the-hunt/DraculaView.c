@@ -23,27 +23,31 @@
 // TODO: ADD YOUR OWN STRUCTS HERE
 
 struct draculaView {
-	// TODO: ADD FIELDS HERE
+	GameView gv;
 };
+
+// Given an array of locations, removes specifies location and decrements n
+// If location does not exist, do nothing
+static PlaceId *removeLocationFromArray(PlaceId *places, PlaceId location, int *n);
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor/Destructor
 
 DraculaView DvNew(char *pastPlays, Message messages[])
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
 	DraculaView new = malloc(sizeof(*new));
 	if (new == NULL) {
 		fprintf(stderr, "Couldn't allocate DraculaView\n");
 		exit(EXIT_FAILURE);
 	}
+    new->gv = GvNew(pastPlays, messages);
 
 	return new;
 }
 
 void DvFree(DraculaView dv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
+	GvFree(dv->gv);
 	free(dv);
 }
 
@@ -52,39 +56,33 @@ void DvFree(DraculaView dv)
 
 Round DvGetRound(DraculaView dv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	
+	return GvGetRound(dv->gv);
 }
 
 int DvGetScore(DraculaView dv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	return GvGetScore(dv->gv);
 }
 
 int DvGetHealth(DraculaView dv, Player player)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return 0;
+	return GvGetHealth(dv->gv, player);
 }
 
 PlaceId DvGetPlayerLocation(DraculaView dv, Player player)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return NOWHERE;
+	return GvGetPlayerLocation(dv->gv, player);
 }
 
 PlaceId DvGetVampireLocation(DraculaView dv)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	return NOWHERE;
+	return GvGetVampireLocation(dv->gv);
 }
 
 PlaceId *DvGetTrapLocations(DraculaView dv, int *numTraps)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numTraps = 0;
-	return NULL;
+	return GvGetTrapLocations(dv->gv, numTraps);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -92,44 +90,212 @@ PlaceId *DvGetTrapLocations(DraculaView dv, int *numTraps)
 
 PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedMoves = 0;
-	return NULL;
+    // List of locations Dracula can move to
+	PlaceId *moves = DvWhereCanIGo(dv, numReturnedMoves);
+
+    // If teleport is only option or Dracula has not moved, return NULL
+    if (moves == NULL) {
+        return NULL;
+    }
+
+    // Get current location
+    PlaceId currentLocation = GvGetPlayerLocation(dv->gv, PLAYER_DRACULA);
+
+    // List of last 5 moves (trail of dracula)
+    int numTrailMoves;
+    bool trailBool;
+    PlaceId *trail = GvGetLastMoves(dv->gv, PLAYER_DRACULA, 5, &numTrailMoves, &trailBool);
+
+    // Check for hide and double-backs on trail
+    int hide = false;
+    int hideIndex;
+    int doubleBack = false;
+    for (int i = 0; i < numTrailMoves; i++) {
+        if (trail[i] == HIDE) {
+            hide = true;
+            hideIndex = i;
+        } else if (DOUBLE_BACK_1 <= trail[i] && trail[i] <= DOUBLE_BACK_5) {
+            doubleBack = true;
+        }
+    }
+    free(trail);
+    
+    // If Dracula has not used HIDE and is not at sea, replace currentLocation with HIDE
+    if (hide == false && placeIdToType(currentLocation) != SEA) {
+        for (int i = 0; i < *numReturnedMoves; i++) {
+            if (currentLocation == moves[i]) {
+                moves[i] = HIDE;
+                break;
+            }
+        }
+    }
+
+    // If Dracula has not used DB, replace moves on trail with corresponding double-back
+    if (doubleBack == false) {
+        // Find locations on trail
+        int tempNum;
+        bool tempBool;
+        PlaceId *lastLocations = GvGetLastLocations(dv->gv, PLAYER_DRACULA, 5, &tempNum, &tempBool);
+
+        for (int nTrail = 0; nTrail < tempNum; nTrail++) {
+            for (int i = 0; i < *numReturnedMoves; i++) {
+                if (lastLocations[nTrail] == moves[i]) {
+                    moves[i] = DOUBLE_BACK_1 + (tempNum - nTrail - 1);
+                    break;
+                }
+            }
+        }
+
+        // if hide was used and is not the last move on the trail, add DB that refers to it's location
+            // since it should show up twice but we had a unique list
+            // if it was the last move on the trail, it is already unique so we don't need to add
+        if (hide == true && hideIndex != 0) {
+            *numReturnedMoves = *numReturnedMoves + 1;
+            moves = realloc(moves, *numReturnedMoves * sizeof(int));
+            moves[*numReturnedMoves - 1] = DOUBLE_BACK_1 + (tempNum - hideIndex - 1);
+        }
+        
+        // Free lastLocations
+        if (tempBool) {
+            free(lastLocations);
+        }
+    }
+
+    // If Dracula can HIDE or DB, then add DB1 (missing)
+    if (doubleBack == false && hide == false && placeIdToType(currentLocation) != SEA) {
+        *numReturnedMoves = *numReturnedMoves + 1;
+        moves = realloc(moves, *numReturnedMoves * sizeof(int));
+        moves[*numReturnedMoves - 1] = DOUBLE_BACK_1;
+    }
+
+    return moves;
+
 }
 
 PlaceId *DvWhereCanIGo(DraculaView dv, int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
+    return DvWhereCanIGoByType(dv, true, true, numReturnedLocs);
 }
 
 PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
                              int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
+	// Get current location
+    PlaceId currentLocation = DvGetPlayerLocation(dv, PLAYER_DRACULA);
+
+    // Check that the player has made a move, else return 0
+	if (currentLocation == NOWHERE) {
+        *numReturnedLocs = 0;
+        return NULL;
+    }
+
+    // List of all locations reachable by Dracula filtering type (ignores trail)
+	PlaceId *reachable = GvGetReachableByType(dv->gv, PLAYER_DRACULA, GvGetRound(dv->gv),
+                                            GvGetPlayerLocation(dv->gv, PLAYER_DRACULA), 
+                                            road, false, boat, numReturnedLocs);
+
+    // List of last 5 moves (trail of dracula)
+    int numTrailMoves;
+    bool trailBool;
+    PlaceId *trail = GvGetLastMoves(dv->gv, PLAYER_DRACULA, 5, &numTrailMoves, &trailBool);
+
+    // Check for hide and double-backs on trail
+    int hide = false;
+    int doubleBack = false;
+    for (int i = 0; i < numTrailMoves; i++) {
+        if (trail[i] == HIDE) {
+            hide = true;
+        } else if (DOUBLE_BACK_1 <= trail[i] && trail[i] <= DOUBLE_BACK_5) {
+            doubleBack = true;
+        }
+    }
+    free(trail);
+
+    // Remove currentLocation if illegal (already used hide or at sea + already used DB)
+    PlaceType locationType = placeIdToType(GvGetPlayerLocation(dv->gv, PLAYER_DRACULA));
+    if (hide == true || locationType == SEA) {
+        if (doubleBack == true) {
+            // Remove current location from reachable
+            reachable = removeLocationFromArray(reachable, currentLocation, numReturnedLocs);
+        }
+    }
+
+    // Remove double-back locations (trail locations) if illegal (already used double-back)
+    if (doubleBack == true) {
+        // Find locations on trail
+        int tempNum;
+        bool tempBool;
+        PlaceId *lastLocations = GvGetLastLocations(dv->gv, PLAYER_DRACULA, numTrailMoves, &tempNum, &tempBool);
+        
+        for (int i = 0; i < tempNum; i++) {
+            if (lastLocations[i] == currentLocation && hide == false) {
+                continue;
+            }
+            reachable = removeLocationFromArray(reachable, lastLocations[i], numReturnedLocs);
+        }
+
+        if (tempBool) {
+            free(lastLocations);
+        }
+    }
+
+    // If teleport is only move, return NULL
+    if (*numReturnedLocs == 0) {
+        return NULL;
+    }
+
+    return reachable;
 }
 
 PlaceId *DvWhereCanTheyGo(DraculaView dv, Player player,
                           int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
+    return DvWhereCanTheyGoByType(dv, player, true, 
+                                true, true, numReturnedLocs);
 }
 
 PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,
                                 bool road, bool rail, bool boat,
                                 int *numReturnedLocs)
 {
-	// TODO: REPLACE THIS WITH YOUR OWN IMPLEMENTATION
-	*numReturnedLocs = 0;
-	return NULL;
+	// Get current location
+    PlaceId currentLocation = GvGetPlayerLocation(dv->gv, PLAYER_DRACULA);
+
+    // Check that the player has made a move, else return 0
+	if (currentLocation == NOWHERE) {
+        *numReturnedLocs = 0;
+        return 0;
+    }
+
+    // If player is Dracula then return DvWhereCanIGoByType
+    if (player == PLAYER_DRACULA) {
+        return DvWhereCanIGoByType(dv, road, boat, numReturnedLocs);
+
+    // If player is hunter then return GvGetReachableByType
+    } else {
+        return GvGetReachableByType(dv->gv, player, GvGetRound(dv->gv),
+                                GvGetPlayerLocation(dv->gv, player), 
+                                road, rail, boat, numReturnedLocs);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Your own interface functions
 
 // TODO
+
+// Given an array of locations, removes specifies location and decrements n
+// If location does not exist, do nothing
+static PlaceId *removeLocationFromArray(PlaceId *places, PlaceId location, int *n) {
+    for (int i = 0; i < *n; i++) {
+        if (places[i] == location) {
+            // Remove by replacing with last element and deleting last element
+            places[i] = places[*n - 1];
+            *n = *n - 1;
+            // Deleting... last element (using realloc)
+            places = realloc(places, *n * sizeof(int));
+            break;
+        }
+    }
+    return places;
+}
