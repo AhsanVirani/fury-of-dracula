@@ -273,9 +273,11 @@ void DraculaStayAway(DraculaView dv, PlaceId *Locs, int numReturnedLocs, int len
 	// All locations current location so just return any
 	if(secBest != NOWHERE) {
 		registerBestPlay(placeIdToAbbrev(moves[counter]), "Mwahahahaha");
+		free(moves);
 		return;
 	}
 	registerBestPlay(placeIdToAbbrev(moves[0]), "Mwahahahaha");
+	free(moves);
 }
 
 static
@@ -296,6 +298,7 @@ void DraculaBestMove(DraculaView dv, PlaceId draculaReach[], int len)
 	PlaceId *moves = DvGetValidMoves(dv, &numReturnedMoves);
 	if(secBest != NOWHERE) {
 		registerBestPlay(placeIdToAbbrev(moves[counter]), "Mwahahahaha");
+		free(moves);
 		return;
 	}
 	for(i = 0; i < numReturnedMoves; i++) {
@@ -304,5 +307,6 @@ void DraculaBestMove(DraculaView dv, PlaceId draculaReach[], int len)
 	}
 	// All sea thats away from Hunters reach then no choice, take it
 	registerBestPlay(placeIdToAbbrev(moves[i]), "Mwahahahaha");
+	free(moves);
 }
 
