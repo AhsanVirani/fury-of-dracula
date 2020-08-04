@@ -280,3 +280,4 @@ void DraculaBestMove(PlaceId draculaReach[], int len)
 	// All sea thats away from Hunters reach then no choice, take it
 	registerBestPlay(placeIdToAbbrev(draculaReach[0]), "Mwahahahaha");
 }
+

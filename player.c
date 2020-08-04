@@ -78,7 +78,7 @@ typedef HunterView View;
 //  GAO.... SST.... HSZ.... MCDTTD. DGAT... GMS.... SFL.... HKL.... MSZ.... DCNT.V. GTS.... SRO.... HBC.... MCNTD.. DBS..M. GIO.... SBI.... HCN.... MCN.... DIO.... GIO.... SAS.... HBS.... MCN.... DTS.... GTS.... SAS.... HIO.... MBS.... DMS.... GMS.... SIO.... HTS.... MIO.... DAO..M. GAO.... STS.... HMS.... MTS.... DNS.... GBB.... SMS.... HAO.... MMS.... DED.V.. GNA.... SAO.... HEC.... MAO.... DMNT... GBO.... SIR.... HLE.... MEC.... DD2T... GSR.... SDU.... HBU.... MPL.... DHIT... GSN.... SIR.... HAM.... MLO.... DTPT... GAL.... SAO.... HCO.... MEC.... DCDT... GMS.... SMS.... HFR.... MLE.... DKLT.V. GTS.... STS.... HBR.... MCO.... DGAT.M. GIO.... SIO.... HBD.... MLI.... DD3T.M. GBS.... SBS.... HKLT... MBR.... DHI..M. GCN.... SCN.... HCDTTTD MVI.... DTPT... GGAT... SGA.... HSZ.... MBC.... DCDT... GCDTTD. SCDD... HKL.... MGA.... DKLT... GSZ.... SKLTD.. HKLD... MKLD... DBC.V.. GBD.... SBE.... HGA.... MBCVD.. DSOT... GSZ.... SSOTD.. HBC.... MSOD...
 int main(void)
 {
-	char *pastPlays = "GSW.... SLS.... HLO.... MHA.... DCD.V.. GLO.... SAL.... HCO.... MBR.... DHIT... GED.... SBO.... HLI.... MPR.... DD2T... GAO.... SST.... HSZ.... MLO....";
+	char *pastPlays = xPastPlays;
 	Message msgs[] = xMsgs;
 
 	View state = ViewNew(pastPlays, msgs);
