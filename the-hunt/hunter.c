@@ -28,6 +28,8 @@ void decideHunterMove(HunterView hv)
         return;
     }
 
+    PlaceId currentLocation = HvGetPlayerLocation(hv, player);
+
     switch (round % 39) {
         case 0:
             registerBestPlay("BD", "None");
