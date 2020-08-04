@@ -32,28 +32,26 @@ static void draculaStarting();
 static void draculaTeleport();
 static PlaceId DraculaStayAway(PlaceId *, int, int);
 static void DraculaBestMove(PlaceId *, int);
+static void initialiseArray(PlaceId *, int);
 
 
 void decideDraculaMove(DraculaView dv)
 {
-	// array will hold locations from away from hunters reach
+	// Holds locations for Dracula's move away from Hunters Reach
 	PlaceId draculaReach[DRAC_REACH];
 
 	// initialise the huntersLoc array with NOWEHRE
-	int i;	
-	for(i = 0; i < MAX_LOCATION; i++)
-		huntersLoc[i] = NOWHERE;
+	initialiseArray(huntersLoc, MAX_LOCATION);
 	size = 0;
 
 	// initialise the draculaReach array with NOWHERE
-	for(i = 0; i < DRAC_REACH; i++)
-		draculaReach[i] = NOWHERE;
-
+	initialiseArray(draculaReach, DRAC_REACH);
+	
 	// Fills the huntersLoc array with current and reachable locations of all hunters
-	// Returns the len for current Locations of Hunters
+	// Returns the len of array which is filled with current locations of hunter. I.e. if Hunters are all at different locs, returns 4.
 	int currentLocation = huntersReach(dv);
 
-	// If Round 0 Play anything for testing
+	// If Round 0 play out of Hunters reach, Location which is not sea and if CD then Best
 	if(DvGetRound(dv) == 0) {
         draculaStarting(dv);
 		return;
@@ -65,7 +63,7 @@ void decideDraculaMove(DraculaView dv)
 	// Going to Sea costs dracula 2 pts, so avoid if can
 	PlaceId *Locs = DvWhereCanIGo(dv, &numReturnedLocs);
 
-	// Means teleported
+	// Means teleported if no Valid Moves
 	if(numReturnedLocs == 0) {
 		draculaTeleport();
 		free(Locs);
@@ -84,6 +82,14 @@ void decideDraculaMove(DraculaView dv)
 	registerBestPlay(placeIdToAbbrev(Far), "Mwahahahaha");
 	free(Locs);
 
+}
+
+static
+void initialiseArray(PlaceId *arr, int len)
+{
+	int i;	
+	for(i = 0; i < len; i++)
+		arr[i] = NOWHERE;
 }
 
 // Fills the array with current location of hunters and places reachable
