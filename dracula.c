@@ -290,4 +290,3 @@ void DraculaBestMove(PlaceId draculaReach[], int len)
 	registerBestPlay(placeIdToAbbrev(draculaReach[0]), "Mwahahahaha");
 }
 
-
