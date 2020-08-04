@@ -19,134 +19,132 @@ void decideHunterMove(HunterView hv)
 	// Hunter walks around in a circle
     // Pending hunterview to be fixed to implement AI
 
-    int round = HvGetRound(hv);
     int player = HvGetPlayer(hv);
-    printf("round: %d\n", round);
-    // Check if player is at ST_JOSEPH_AND_ST_MARY (killed) stay
-    if (HvGetPlayerLocation(hv, player) == ST_JOSEPH_AND_ST_MARY){
-        registerBestPlay("JM", "None");
-        return;
-    }
-
     PlaceId currentLocation = HvGetPlayerLocation(hv, player);
 
-    switch (round % 39) {
-        case 0:
+    switch (currentLocation) {
+        case VIENNA:
             registerBestPlay("BD", "None");
         break;
-        case 1:
+        case BUDAPEST:
             registerBestPlay("SZ", "None");
         break;
-        case 2:
+        case SZEGED:
             registerBestPlay("KL", "None");
         break;
-        case 3:
+        case KLAUSENBURG:
             registerBestPlay("CD", "None");
         break;
-        case 4:
+        case CASTLE_DRACULA:
             registerBestPlay("GA", "None");
         break;
-        case 5:
+        case GALATZ:
             registerBestPlay("CN", "None");
         break;
-        case 6:
+        case CONSTANTA:
             registerBestPlay("VR", "None");
         break;
-        case 7:
+        case VARNA:
             registerBestPlay("BS", "None");
         break;
-        case 8:
+        case BLACK_SEA:
             registerBestPlay("IO", "None");
         break;
-        case 9:
+        case IONIAN_SEA:
             registerBestPlay("VA", "None");
         break;
-        case 10:
+        case VALONA:
             registerBestPlay("SJ", "None");
         break;
-        case 11:
+        case SARAJEVO:
             registerBestPlay("ZA", "None");
         break;
-        case 12:
+        case ST_JOSEPH_AND_ST_MARY: //////////////////// IF DEAD
+            registerBestPlay("ZA", "None");
+        break;
+        case ZAGREB:
             registerBestPlay("MU", "None");
         break;
-        case 13:
+        case MUNICH:
             registerBestPlay("VE", "None");
         break;
-        case 14:
+        case VENICE:
             registerBestPlay("FL", "None");
         break;
-        case 15:
+        case FLORENCE:
             registerBestPlay("RO", "None");
         break;
-        case 16:
+        case ROME:
             registerBestPlay("NP", "None");
         break;
-        case 17:
+        case NAPLES:
             registerBestPlay("TS", "None");
         break;
-        case 18:
+        case TYRRHENIAN_SEA:
             registerBestPlay("MS", "None");
         break;
-        case 19:
+        case MEDITERRANEAN_SEA:
             registerBestPlay("MR", "None");
         break;
-        case 20:
+        case MARSEILLES:
             registerBestPlay("CF", "None");
         break;
-        case 21:
+        case CLERMONT_FERRAND:
             registerBestPlay("TO", "None");
         break;
-        case 22:
+        case TOULOUSE:
             registerBestPlay("SR", "None");
         break;
-        case 23:
+        case SARAGOSSA:
             registerBestPlay("MA", "None");
         break;
-        case 24:
+        case MADRID:
             registerBestPlay("SN", "None");
         break;
-        case 25:
+        case SANTANDER:
             registerBestPlay("BB", "None");
         break;
-        case 26:
+        case BAY_OF_BISCAY:
             registerBestPlay("AO", "None");
         break;
-        case 27:
+        case ATLANTIC_OCEAN:
             registerBestPlay("IR", "None");
         break;
-        case 28:
+        case IRISH_SEA:
             registerBestPlay("SW", "None");
         break;
-        case 29:
+        case SWANSEA:
             registerBestPlay("LV", "None");
         break;
-        case 30:
+        case LIVERPOOL:
             registerBestPlay("MN", "None");
         break;
-        case 31:
+        case MANCHESTER:
             registerBestPlay("ED", "None");
         break;
-        case 32:
+        case EDINBURGH:
             registerBestPlay("NS", "None");
         break;
-        case 33:
+        case NORTH_SEA:
             registerBestPlay("AM", "None");
         break;
-        case 34:
+        case AMSTERDAM:
             registerBestPlay("CO", "None");
         break;
-        case 35:
+        case COLOGNE:
             registerBestPlay("HA", "None");
         break;
-        case 36:
+        case HAMBURG:
             registerBestPlay("BR", "None");
         break;
-        case 37:
+        case BERLIN:
             registerBestPlay("PR", "None");
         break;
-        case 38:
+        case PRAGUE:
             registerBestPlay("VI", "None");
+        break;
+        default:
+            registerBestPlay(placeIdToAbbrev(currentLocation), "None");
         break;
     }
 }
