@@ -36,9 +36,9 @@ void decideDraculaMove(DraculaView dv)
     } else if (numReturnedMoves == 0) {
         draculaTeleport();
     // otherwise register the first valid move to meet time-constraint
-    // and implement AI to select the best move 
+    // and implement AI to select the best move
     } else {
-	    registerBestPlay(placeIdToAbbrev(moves[(rand()) % numReturnedMoves]), "Mwahahahaha");
+	    registerBestPlay(placeIdToAbbrev(moves[rand() % numReturnedMoves]), "Mwahahahaha");
         draculaAI(dv, currentLocation, moves);
     }
     free(moves);
