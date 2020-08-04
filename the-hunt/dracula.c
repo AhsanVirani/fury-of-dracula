@@ -9,6 +9,8 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
+#include <string.h>
+
 #include "dracula.h"
 #include "DraculaView.h"
 #include "Game.h"
@@ -36,7 +38,8 @@ void decideDraculaMove(DraculaView dv)
     // otherwise register the first valid move to meet time-constraint
     // and implement AI to select the best move
     } else {
-	    registerBestPlay(placeIdToAbbrev(moves[0]), "Mwahahahaha");
+        char *name = strdup(placeIdToAbbrev(moves[0]));
+	    registerBestPlay(name, "Mwahahahaha");
         draculaAI(dv, currentLocation, moves);
     }
     free(moves);

@@ -12,7 +12,6 @@
 #include "Game.h"
 #include "hunter.h"
 #include "HunterView.h"
-#include "GameView.h"
 #include <stdio.h>
 
 void decideHunterMove(HunterView hv)
