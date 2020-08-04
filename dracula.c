@@ -31,6 +31,7 @@ static int DraculaAI(PlaceId *validMoves, PlaceId draculaReac[], int numReturned
 static void draculaStarting();
 static void draculaTeleport();
 static PlaceId DraculaStayAway(PlaceId *, int, int);
+static void DraculaBestMove(PlaceId *, int);
 
 
 void decideDraculaMove(DraculaView dv)
@@ -62,11 +63,7 @@ void decideDraculaMove(DraculaView dv)
 	// Takes Valid Moves of Dracula and returns array that excludes locations of huntersReach
 	int numReturnedLocs = -1;
 	// Going to Sea costs dracula 2 pts, so avoid if can
-	PlaceId *Locs = DvWhereCanIGoByType(dv, true, false, &numReturnedLocs);
-	// Include if no choice
-	if(Locs == 0) {
-		Locs = DvWhereCanIGo(dv, &numReturnedLocs);
-	}
+	PlaceId *Locs = DvWhereCanIGo(dv, &numReturnedLocs);
 
 	// Means teleported
 	if(numReturnedLocs == 0) {
@@ -76,8 +73,9 @@ void decideDraculaMove(DraculaView dv)
 	}
 	// gives the first element in best moves array
 	int nLocs = DraculaAI(Locs, draculaReach, numReturnedLocs);
+	// Go over the array and instead of chosing first element, choose loc which is not sea or CASTLE_DRACULA
 	if(nLocs > 0) {
-		registerBestPlay(placeIdToAbbrev(draculaReach[0]), "Mwahahahaha");
+		DraculaBestMove(draculaReach, nLocs);
 		free(Locs);	
 		return;
 	}
@@ -191,7 +189,7 @@ static
 void draculaStarting() 
 {	
 	// Start anywhere not sea or in Hunters Reach
-	PlaceId start, bestStart;
+	PlaceId start, secBest, Best = NOWHERE;
 	int j;
 	for(start = MIN_REAL_PLACE; start <= MAX_REAL_PLACE; start++) {
 		for(j = 0; j < size; j++) {
@@ -199,16 +197,20 @@ void draculaStarting()
 				break;
 		}	
 		// Means that start atleast not in Hunters Reach
-		if(size == j)
-			bestStart = start;
-		// Check if not sea
-		if(!placeIsSea(start)) {
-			bestStart = start;
-			break;
+		if(size == j) {
+			secBest = start;
+			// Check if not sea
+			if(!placeIsSea(start))
+				Best = secBest;
+			if(Best == CASTLE_DRACULA)
+				break;			
 		}
 	}
-
-	registerBestPlay(placeIdToAbbrev(bestStart), "Mwahahahaha");
+	if(Best != NOWHERE) {
+		registerBestPlay(placeIdToAbbrev(Best), "Mwahahahaha");
+		return;
+	}
+	registerBestPlay(placeIdToAbbrev(secBest), "Mwahahahaha");
 }
 
 // Registers Teleport when Dracula has no valid moves
@@ -218,9 +220,13 @@ void draculaTeleport() {
     return;
 }
 
+// This function is used if Dracula doesnot have any moves outside huntersLoc
+// Finds atleast a location not a current location of Hunter
+// Else gives any in case if all leads to Hunters current location
 static
 PlaceId DraculaStayAway(PlaceId *Locs, int numReturnedLocs, int len)
 {
+	PlaceId secBest, Best = NOWHERE;
 	int i, j;
 	for(i = 0; i < numReturnedLocs; i++) {
 		for(j = 0; j < len; j++) {
@@ -228,11 +234,38 @@ PlaceId DraculaStayAway(PlaceId *Locs, int numReturnedLocs, int len)
 				break;
 		}
 		// means location not a current location of hunter
-		if(j == len)
-			return Locs[i];
+		if(j == len) {
+			secBest = Locs[i];
+			if(!placeIsSea(secBest))
+				Best = Locs[i];
+			if(Best == CASTLE_DRACULA)
+				return Best;
+		}
 	}
+	// Here. either Best or secBest or Nowhere
+	if(Best != NOWHERE)
+		return Best;
 	// All locations current location so just return any
-	return Locs[0];
+	return secBest == NOWHERE? Locs[0]: secBest;
+}
+
+static
+void DraculaBestMove(PlaceId draculaReach[], int len)
+{
+	PlaceId secBest = NOWHERE;
+	int i;
+	for(i = 0; i < len; i++) {
+		if(!placeIsSea(draculaReach[i]))
+			secBest = draculaReach[i];
+		if(secBest == CASTLE_DRACULA)
+			break;
+	}
+	if(secBest != NOWHERE) {
+		registerBestPlay(placeIdToAbbrev(secBest), "Mwahahahaha");
+		return;
+	}
+	// All sea thats away from Hunters reach then no choice, take it
+	registerBestPlay(placeIdToAbbrev(draculaReach[0]), "Mwahahahaha");
 }
 
 
