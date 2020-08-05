@@ -256,7 +256,7 @@ void DraculaStayAway(DraculaView dv, PlaceId *Moves, int nMoves, int len)
 		return;
 	}
 
-	registerBestPlay(placeIdToAbbrev(Moves[nMoves-2]), "Mwahahahaha");
+	registerBestPlay(placeIdToAbbrev(Moves[nMoves > 1? nMoves-2: 0]), "Mwahahahaha");
 }
 
 static
@@ -307,7 +307,7 @@ void DraculaBestMove(DraculaView dv, PlaceId draculaReach[], int len)
 		return;
 	}
 	// Play anymoves otherwise cuz doesn't matter now.
-	registerBestPlay(placeIdToAbbrev(draculaReach[len-2]), "Mwahahahaha");
+	registerBestPlay(placeIdToAbbrev(draculaReach[len > 1? len-2:len-1]), "Mwahahahaha");
 }
 
 static
