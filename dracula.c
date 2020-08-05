@@ -234,17 +234,6 @@ void DraculaStayAway(DraculaView dv, PlaceId *Moves, int nMoves, int len)
 			if(Moves[i] == huntersLoc[j])
 				break;
 		}
-/*
-		// If move is a hide or DB1 then catches it as last priority
-		if(IsNonRealMove(Moves[i])) {
-			if(DvGetPlayerLocation(dv, PLAYER_DRACULA) == CASTLE_DRACULA && IsHideOrDB(Moves[i])) {
-				registerBestPlay(placeIdToAbbrev(Moves[i]), "Mwahahahaha");
-				return;
-			}
-			lastMove = Moves[i];
-			continue;
-		}
-*/
 		// Location not a current location of Hunter
 		// cature the move as second Best
 		if(j == len) {
@@ -265,14 +254,8 @@ void DraculaStayAway(DraculaView dv, PlaceId *Moves, int nMoves, int len)
 		registerBestPlay(placeIdToAbbrev(secBest), "Mwahahahaha");
 		return;
 	}
-/*
-	if(lastMove != NOWHERE) {
-		registerBestPlay(placeIdToAbbrev(lastMove), "Mwahahahaha");
-		return;
 
-	}
-*/
-	registerBestPlay(placeIdToAbbrev(Moves[nMoves-1]), "Mwahahahaha");
+	registerBestPlay(placeIdToAbbrev(Moves[nMoves-2]), "Mwahahahaha");
 }
 
 static
@@ -323,7 +306,7 @@ void DraculaBestMove(DraculaView dv, PlaceId draculaReach[], int len)
 		return;
 	}
 	// Play anymoves otherwise cuz doesn't matter now.
-	registerBestPlay(placeIdToAbbrev(draculaReach[len-1]), "Mwahahahaha");
+	registerBestPlay(placeIdToAbbrev(draculaReach[len-2]), "Mwahahahaha");
 }
 
 static
