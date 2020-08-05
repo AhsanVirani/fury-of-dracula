@@ -40,6 +40,7 @@ static int protectCastleCircle();
 
 
 
+
 void decideDraculaMove(DraculaView dv)
 {
 	// Holds locations for Dracula's move away from Hunters Reach
