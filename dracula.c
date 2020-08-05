@@ -34,6 +34,8 @@ static void DraculaStayAway(DraculaView, PlaceId *, int, int);
 static void DraculaBestMove(DraculaView, PlaceId *, int);
 static void initialiseArray(PlaceId *, int);
 static int InHunterReach(PlaceId);
+static int IsNonRealMove(PlaceId move);
+static int IsHideOrDB(PlaceId move);
 
 
 
@@ -59,20 +61,17 @@ void decideDraculaMove(DraculaView dv)
 
 	// Takes Valid Moves of Dracula and returns array that excludes locations of huntersReach
 	int numReturnedMoves = -1;
-	// Going to Sea costs dracula 2 pts, so avoid if can
 	PlaceId *Moves = DvGetValidMoves(dv, &numReturnedMoves);
-	//for(int i = 0; i < numReturnedMoves; i++)
-		//printf("%s\n", placeIdToName(Moves[i]));
 
-	// Means teleported if no Valid Moves
+	// Teleport to CD if no Valid Moves
 	if(numReturnedMoves == 0) {
 		draculaTeleport();
 		free(Moves);
 		return;
 	}
-	// gives the first element in best moves array
+	// Fills draculaReach array with Valid Moves excluding Hunters Reach
 	int nMoves = DraculaAI(Moves, draculaReach, numReturnedMoves);
-	// Go over the array and instead of chosing first element, choose loc which is not sea or CASTLE_DRACULA
+	// If nMoves exists then its the best strategy hence play it
 	if(nMoves > 0) {
 		DraculaBestMove(dv, draculaReach, nMoves);
 		free(Moves);	
@@ -236,26 +235,27 @@ void DraculaStayAway(DraculaView dv, PlaceId *Moves, int nMoves, int len)
 				break;
 		}
 		// If move is a hide or DB1 then catches it as last priority
-		if(Moves[i] >= 102 && Moves[i] <= 104) {
-			if(DvGetPlayerLocation(dv, PLAYER_DRACULA) == CASTLE_DRACULA && Moves[i] != 104) {
+		if(IsNonRealMove(Moves[i])) {
+			if(DvGetPlayerLocation(dv, PLAYER_DRACULA) == CASTLE_DRACULA && IsHideOrDB(Moves[i])) {
 				registerBestPlay(placeIdToAbbrev(Moves[i]), "Mwahahahaha");
 				return;
 			}
 			lastMove = Moves[i];
 			continue;
 		}
-		// means location not a current location of hunter
+		// Location not a current location of Hunter
+		// cature the move as second Best
 		if(j == len) {
 			secBest = Moves[i];
-			if(!placeIsSea(secBest)) {
+			// if the move is sea move then make it best -> Best opportunity to run
+			if(placeIsSea(secBest)) {
 				Best = Moves[i];
 			}
+			// If it leads to CD then take points
 			if(Best == CASTLE_DRACULA)
 				break;
 		}
 	}
-	printf("%s\n", placeIdToName(Best));
-	
 	// Here. either Best or secBest or Nowhere
 	if(Best != NOWHERE) {
 		registerBestPlay(placeIdToAbbrev(Best), "Mwahahahaha");
@@ -279,40 +279,47 @@ static
 void DraculaBestMove(DraculaView dv, PlaceId draculaReach[], int len)
 {
 
-	PlaceId lastMove, Best;
-	lastMove = Best = NOWHERE;
+	PlaceId lastMove, Best, seaMove;
+	lastMove = Best = seaMove = NOWHERE;
 	int i;
 	for(i = 0; i < len; i++) {
-		//printf("%s\n", placeIdToName(draculaReach[i]));
-		if(draculaReach[i] >= 102 && draculaReach[i] <= 107) {
-			if(DvGetPlayerLocation(dv, PLAYER_DRACULA) == CASTLE_DRACULA && (draculaReach[i] >= 102 && draculaReach[i] <= 103)) {
+		// If move is Hide or DB go inside
+		if(IsNonRealMove(draculaReach[i])) {
+			// If currently at CD and HI or DB1 available then play
+			if(DvGetPlayerLocation(dv, PLAYER_DRACULA) == CASTLE_DRACULA && IsHideOrDB(draculaReach[i])) {
 				registerBestPlay(placeIdToAbbrev(draculaReach[i]), "Mwahahahaha");
 				return;
 			}
 			lastMove = draculaReach[i];
 			continue;
 		}
-
+		// Updates the best position here. Avoids Sea.
 		if(!placeIsSea(draculaReach[i])) {
 			Best = draculaReach[i];
 			if(Best == CASTLE_DRACULA)
 				break;
 		}
+		// Must be a Sea if gets here
+		seaMove = draculaReach[i];
 	}
+	// Play the Best move is possible
 	if(Best != NOWHERE) {
 		registerBestPlay(placeIdToAbbrev(Best), "Mwahahahaha");
 		return;
 	}
-	if(lastMove == 102 || lastMove == 103) {
-		// Must be Hide or DD1 or DB2. If it leads to Hunters then game over. Avoid this
-		// check if current location of dracula is not in the huntersReach
+	// Play HI or DB1 if it doesnot leads to hunter
+	if(IsHideOrDB(lastMove)) {
 		if(!InHunterReach(DvGetPlayerLocation(dv, PLAYER_DRACULA))) {
 			registerBestPlay(placeIdToAbbrev(lastMove), "Mwahahahaha");
 			return;
 		}
 	}
-	// Play sea here instead of first elem
-	// All sea thats away from Hunters reach then no choice, take it
+	// Play sea otherwise if have
+	if(seaMove != NOWHERE) {
+		registerBestPlay(placeIdToAbbrev(seaMove), "Mwahahahaha");
+		return;
+	}
+	// Play anymoves otherwise cuz doesn't matter now.
 	registerBestPlay(placeIdToAbbrev(draculaReach[0]), "Mwahahahaha");
 }
 
@@ -325,4 +332,16 @@ int InHunterReach(PlaceId move)
 			return 1;
 	}
 	return 0;
+}
+
+static
+int IsNonRealMove(PlaceId move)
+{
+	return (move >= 102 && move <=107);
+}
+
+static
+int IsHideOrDB(PlaceId move)
+{
+	return (move == 102 || move == 103);
 }
