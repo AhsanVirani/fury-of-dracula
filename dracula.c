@@ -287,6 +287,9 @@ void DraculaBestMove(DraculaView dv, PlaceId draculaReach[], int len)
 		if(IsNonRealMove(draculaReach[i])) {
 			// If currently at CD and HI or DB1 available then play
 			if(DvGetPlayerLocation(dv, PLAYER_DRACULA) == CASTLE_DRACULA && IsHideOrDB(draculaReach[i])) {
+				// If HI or DB1 to CD is in Hunter's Reach then avoid
+				if(InHunterReach(CASTLE_DRACULA))
+					continue;
 				registerBestPlay(placeIdToAbbrev(draculaReach[i]), "Mwahahahaha");
 				return;
 			}
