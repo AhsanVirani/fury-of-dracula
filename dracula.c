@@ -36,7 +36,7 @@ static void initialiseArray(PlaceId *, int);
 static int InHunterReach(PlaceId);
 static int IsNonRealMove(PlaceId move);
 static int IsHideOrDB(PlaceId move);
-static int DraculaReachSize(PlaceId draculaReach[], int len);
+//static int DraculaReachSize(PlaceId draculaReach[], int len);
 
 
 
@@ -272,7 +272,7 @@ void DraculaBestMove(DraculaView dv, PlaceId draculaReach[], int len)
 			// If currently at CD and HI or DB1 available then play
 			if(DvGetPlayerLocation(dv, PLAYER_DRACULA) == CASTLE_DRACULA && IsHideOrDB(draculaReach[i])) {
 				// If HI or DB1 to CD is in Hunter's Reach then avoid
-				if(InHunterReach(CASTLE_DRACULA) || DraculaReachSize(draculaReach, len) <= 2)
+				if(InHunterReach(CASTLE_DRACULA))
 					continue;
 				registerBestPlay(placeIdToAbbrev(draculaReach[i]), "Mwahahahaha");
 				return;
@@ -296,7 +296,7 @@ void DraculaBestMove(DraculaView dv, PlaceId draculaReach[], int len)
 	}
 	// Play HI or DB1 if it doesnot leads to hunter
 	if(IsHideOrDB(lastMove)) {
-		if(!InHunterReach(DvGetPlayerLocation(dv, PLAYER_DRACULA)) && DraculaReachSize(draculaReach, len) > 2) {
+		if(!InHunterReach(DvGetPlayerLocation(dv, PLAYER_DRACULA))) {
 			registerBestPlay(placeIdToAbbrev(lastMove), "Mwahahahaha");
 			return;
 		}
@@ -332,7 +332,7 @@ int IsHideOrDB(PlaceId move)
 {
 	return (move == 102 || move == 103);
 }
-
+/*
 // Gives the len of places reachable by dracula from current location excluding HI and DB moves
 static
 int DraculaReachSize(PlaceId draculaReach[], int len)
@@ -347,4 +347,4 @@ int DraculaReachSize(PlaceId draculaReach[], int len)
 	
 	return size;
 }
-
+*/
