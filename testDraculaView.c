@@ -543,13 +543,15 @@ int main(void)
     // DvGetValidMoves
     printf("... testing DvGetValidMoves\n");
     PlaceId *moves = DvGetValidMoves(dv, &num);
-    assert(num == 5);
+    printf("num = %d\n", num);
+    assert(num == 6);
     sortPlaces(moves, num);
-    assert(moves[0] == CONSTANTA);
-    assert(moves[1] == DOUBLE_BACK_1);
-    assert(moves[2] == DOUBLE_BACK_2);
-    assert(moves[3] == DOUBLE_BACK_4);
-    assert(moves[4] == DOUBLE_BACK_5);
+    assert(moves[0] == CASTLE_DRACULA);
+    assert(moves[1] == CONSTANTA);
+    assert(moves[2] == DOUBLE_BACK_1);
+    assert(moves[3] == DOUBLE_BACK_2);
+    assert(moves[4] == DOUBLE_BACK_4);
+    assert(moves[5] == DOUBLE_BACK_5);
     free(moves);
 
     // DvWhereCanIGo
@@ -562,6 +564,38 @@ int main(void)
     assert(locations[2] == CONSTANTA);
     assert(locations[3] == GALATZ);
     assert(locations[4] == KLAUSENBURG);
+    free(locations);
+
+    DvFree(dv);
+    passed();
+    }
+
+
+    {///////////////////////////////////////////////////////////////////
+    purple();
+    printf("Test for when HIDE is about to fall off trail\n");
+    resetColour();
+    char *trail =
+        "GSZ.... SLO.... HSR.... MZU.... DZA.V.. GSZ.... SLO.... HMA.... MST.... DSJT... GCN.... SLO.... HMA.... MZU.... DBET... GBC.... SLO.... HMA.... MST.... DD2T... GSO.... SLO.... HSR.... MGE.... DHIT... GSO.... SLO.... HMA.... MZU.... DVAT... GVR.... SLO.... HMA.... MST.... DATT.V. GVR.... SLO.... HMA.... MPA.... DIO..M. GBS.... SLO.... HSR.... MFR.... DSAT.M. GVR.... SLO.... HMA.... MFR.... DD2..M. GSO.... SLO.... HMA.... MFR.... DTS..M. GVR.... SLO.... HMA.... MST.... DGOT.M. GBS.... SLO.... HMA.... MBU.... DMIT.M. GCN.... SED.... HLS.... MLE.... DMR.V.. GGA.... SLV.... HMA.... MNA.... DGET.M. GCN.... SMN.... HAL.... MLE.... DCFT... GGA.... SED.... HSR.... MLE.... DD1T... GCN.... SLV.... HBA.... MNA.... DHIT.M. GGA.... SED.... HSR.... MLE.... DNAT.M. GCN.... SED.... HTO.... MBO.... DBB..V. GGA.... SED.... HCFTTT. MMA.... DAO..M. GCN.... SLV.... HMR.... MGR.... DGWT... GGA.... SED.... HTO.... MAL.... DDUT... GCN.... SED.... HCF.... MSR.... DD1T... GGA.... SED.... HMR.... MBA.... DHIT.M. GCN.... SLV.... HGO.... MSR.... DIR.... GGA.... SED.... HMI.... MTO.... DAO.... GCN.... SED.... HGE.... MCF.... DGWT.M. GGA.... SED.... HGE.... MMR....";
+    
+    Message messages[144] = {};
+    DraculaView dv = DvNew(trail, messages);
+    int num = -1;
+
+    // DvGetValidMoves
+    printf("... testing DvGetValidMoves\n");
+    PlaceId *moves = DvGetValidMoves(dv, &num);
+    assert(num == 1);
+    sortPlaces(moves, num);
+    assert(moves[0] == DUBLIN);
+    free(moves);
+
+    // DvWhereCanIGo
+    printf("... testing DvWhereCanIGo\n");
+    PlaceId *locations = DvWhereCanIGo(dv, &num);
+    assert(num == 1);
+    sortPlaces(locations, num);
+    assert(locations[0] == DUBLIN);
     free(locations);
 
     DvFree(dv);

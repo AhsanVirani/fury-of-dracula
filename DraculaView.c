@@ -137,6 +137,17 @@ PlaceId *DvGetValidMoves(DraculaView dv, int *numReturnedMoves)
         bool tempBool;
         PlaceId *lastLocations = GvGetLastLocations(dv->gv, PLAYER_DRACULA, 5, &tempNum, &tempBool);
 
+        if (hide == true && hideIndex == 0) {
+            for (int i = 0; i < *numReturnedMoves; i++) {
+                if (lastLocations[0] == moves[i]) {
+                    *numReturnedMoves = *numReturnedMoves + 1;
+                    moves = realloc(moves, *numReturnedMoves * sizeof(int));
+                    moves[*numReturnedMoves - 1] = lastLocations[0];
+                    break;
+                }
+            }
+        }
+
         for (int nTrail = 0; nTrail < tempNum; nTrail++) {
             for (int i = 0; i < *numReturnedMoves; i++) {
                 if (lastLocations[nTrail] == moves[i]) {
@@ -201,12 +212,16 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
 
     // Check for hide and double-backs on trail
     int hide = false;
+    int hideIndex = -1;
     int doubleBack = false;
+    int doubleBackIndex = -1;
     for (int i = 0; i < numTrailMoves; i++) {
         if (trail[i] == HIDE) {
             hide = true;
+            hideIndex = i;
         } else if (DOUBLE_BACK_1 <= trail[i] && trail[i] <= DOUBLE_BACK_5) {
             doubleBack = true;
+            doubleBackIndex = i;
         }
     }
     free(trail);
@@ -229,6 +244,9 @@ PlaceId *DvWhereCanIGoByType(DraculaView dv, bool road, bool boat,
         
         for (int i = 0; i < tempNum; i++) {
             if (lastLocations[i] == currentLocation && hide == false) {
+                continue;
+            }
+            if (i == hideIndex || i == doubleBackIndex) {
                 continue;
             }
             reachable = removeLocationFromArray(reachable, lastLocations[i], numReturnedLocs);
@@ -254,12 +272,12 @@ PlaceId *DvWhereCanTheyGo(DraculaView dv, Player player,
                                 true, true, numReturnedLocs);
 }
 
-PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,
+PlaceId *DvWhereCanTheyGoByType(DraculaView dv, Player player,  
                                 bool road, bool rail, bool boat,
                                 int *numReturnedLocs)
 {
 	// Get current location
-    PlaceId currentLocation = GvGetPlayerLocation(dv->gv, PLAYER_DRACULA);
+    PlaceId currentLocation = GvGetPlayerLocation(dv->gv, player);
 
     // Check that the player has made a move, else return 0
 	if (currentLocation == NOWHERE) {
