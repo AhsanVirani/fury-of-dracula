@@ -8,6 +8,14 @@
 // 2020-07-10	v3.0	Team Dracula <cs2521@cse.unsw.edu.au>
 //
 ////////////////////////////////////////////////////////////////////////
+<<<<<<< HEAD
+=======
+// TODO:
+// Make a shortest path algorithm and make an array that takes you to CASTLE_DRACULA
+// Eliminate moves from array that are not in draculaReach array then take a move that leads to CD
+// Then the limits comes in that try to use a city location and sea later and all those.
+
+>>>>>>> 80a72eb328e5cc7cf2b39d92e11bea5b8a774394
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +41,14 @@ static void draculaTeleport();
 static void DraculaStayAway(DraculaView, PlaceId *, int, int);
 static void DraculaBestMove(DraculaView, PlaceId *, int);
 static void initialiseArray(PlaceId *, int);
+<<<<<<< HEAD
+=======
+static int InHunterReach(PlaceId);
+static int IsNonRealMove(PlaceId move);
+static int IsHideOrDB(PlaceId move);
+static int protectCastleCircle();
+
+>>>>>>> 80a72eb328e5cc7cf2b39d92e11bea5b8a774394
 
 
 void decideDraculaMove(DraculaView dv)
@@ -56,6 +72,7 @@ void decideDraculaMove(DraculaView dv)
 	}
 
 	// Takes Valid Moves of Dracula and returns array that excludes locations of huntersReach
+<<<<<<< HEAD
 	int numReturnedLocs = -1;
 	// Going to Sea costs dracula 2 pts, so avoid if can
 	PlaceId *Locs = DvWhereCanIGo(dv, &numReturnedLocs);
@@ -73,12 +90,34 @@ void decideDraculaMove(DraculaView dv)
 	if(nLocs > 0) {
 		DraculaBestMove(dv, draculaReach, nLocs);
 		free(Locs);	
+=======
+	int numReturnedMoves = -1;
+	PlaceId *Moves = DvGetValidMoves(dv, &numReturnedMoves);
+
+	// Teleport to CD if no Valid Moves
+	if(numReturnedMoves == 0) {
+		draculaTeleport();
+		free(Moves);
+		return;
+	}
+	// Fills draculaReach array with Valid Moves excluding Hunters Reach
+	int nMoves = DraculaAI(Moves, draculaReach, numReturnedMoves);
+	// If nMoves exists then its the best strategy hence play it
+	if(nMoves > 0) {
+		DraculaBestMove(dv, draculaReach, nMoves);
+		free(Moves);	
+>>>>>>> 80a72eb328e5cc7cf2b39d92e11bea5b8a774394
 		return;
 	}
 	// Here means no moves for Dracula which is away far away from Hunters
 	// 1st pref: choose location not a current location and CD if possible 2nd pref: Just play any if stuff 
+<<<<<<< HEAD
 	DraculaStayAway(dv, Locs, numReturnedLocs, currentLocation);	
 	free(Locs);
+=======
+	DraculaStayAway(dv, Moves, numReturnedMoves, currentLocation);	
+	free(Moves);
+>>>>>>> 80a72eb328e5cc7cf2b39d92e11bea5b8a774394
 }
 
 static
@@ -106,31 +145,11 @@ int huntersReach(DraculaView dv)
 			size++;
 		}			
 	}
-/*
-	if(!InArray(dv, 1)) {
-		huntersLoc[1] = DvGetPlayerLocation(dv, 1);
-		size++;
-	}
-	if(!InArray(dv, 2)) {
-		huntersLoc[2] = DvGetPlayerLocation(dv, 2);
-		size++;
-	}
-	if(!InArray(dv, 3)) {
-		huntersLoc[3] = DvGetPlayerLocation(dv, 3);
-		size++;
-	}
-*/
 
 	len = size;
 	// Insert places reachable by the hunters in the array
 	for(i = 0; i <= 3; i++)
 		updateHuntersReach(dv, i);	
-/*
-	updateHuntersReach(dv, 0);
-	updateHuntersReach(dv, 1);
-	updateHuntersReach(dv, 2);
-	updateHuntersReach(dv, 3);
-*/	
 	return len;
 }
 
@@ -192,7 +211,11 @@ int DraculaAI(PlaceId *validMoves, PlaceId draculaReach[], int numReturnedMoves)
 			if(huntersLoc[j] == validMoves[i])
 				break;
 		}
+<<<<<<< HEAD
 		if(size == j) {
+=======
+		if(size == j || placeIsSea(validMoves[i])) {
+>>>>>>> 80a72eb328e5cc7cf2b39d92e11bea5b8a774394
 			draculaReach[len] = validMoves[i];
 			len++;
 		}		
@@ -219,8 +242,16 @@ void draculaStarting()
 			// Check if not sea
 			if(!placeIsSea(start))
 				Best = secBest;
+<<<<<<< HEAD
 			if(Best == CASTLE_DRACULA)
 				break;			
+=======
+			if(Best == CASTLE_DRACULA) {
+                if(protectCastleCircle())
+                    continue;                				
+				break;
+			}			
+>>>>>>> 80a72eb328e5cc7cf2b39d92e11bea5b8a774394
 		}
 	}
 	if(Best != NOWHERE) {
@@ -241,6 +272,7 @@ void draculaTeleport() {
 // Finds atleast a location not a current location of Hunter
 // Else gives any in case if all leads to Hunters current location
 static
+<<<<<<< HEAD
 void DraculaStayAway(DraculaView dv, PlaceId *Locs, int numReturnedLocs, int len)
 {
 	PlaceId secBest, Best = NOWHERE;
@@ -268,21 +300,55 @@ void DraculaStayAway(DraculaView dv, PlaceId *Locs, int numReturnedLocs, int len
 	// Here. either Best or secBest or Nowhere
 	if(Best != NOWHERE) {
 		registerBestPlay(placeIdToAbbrev(moves[i]), "Mwahahahaha");
+=======
+void DraculaStayAway(DraculaView dv, PlaceId *Moves, int nMoves, int len)
+{
+	PlaceId Best, secBest, lastMove;
+	Best = secBest = lastMove = NOWHERE;
+	int i, j;
+	for(i = 0; i < nMoves; i++) {
+		for(j = 0; j < len; j++) {
+			if(Moves[i] == huntersLoc[j])
+				break;
+		}
+		// Location not a current location of Hunter
+		// cature the move as second Best
+		if(j == len) {
+			secBest = Moves[i];
+			// if the move is sea move then make it best -> Best opportunity to run
+			if(placeIsSea(secBest)) {
+				Best = Moves[i];
+			}
+		}
+	}
+	// Here. either Best or secBest or Nowhere
+	if(Best != NOWHERE) {
+		registerBestPlay(placeIdToAbbrev(Best), "Mwahahahaha");
+>>>>>>> 80a72eb328e5cc7cf2b39d92e11bea5b8a774394
 		return;
 	}
 	// All locations current location so just return any
 	if(secBest != NOWHERE) {
+<<<<<<< HEAD
 		registerBestPlay(placeIdToAbbrev(moves[counter]), "Mwahahahaha");
 		free(moves);
 		return;
 	}
 	registerBestPlay(placeIdToAbbrev(moves[0]), "Mwahahahaha");
 	free(moves);
+=======
+		registerBestPlay(placeIdToAbbrev(secBest), "Mwahahahaha");
+		return;
+	}
+
+	registerBestPlay(placeIdToAbbrev(Moves[nMoves > 1? nMoves-2 : 0]), "Mwahahahaha");
+>>>>>>> 80a72eb328e5cc7cf2b39d92e11bea5b8a774394
 }
 
 static
 void DraculaBestMove(DraculaView dv, PlaceId draculaReach[], int len)
 {
+<<<<<<< HEAD
 	PlaceId secBest = NOWHERE;
 	int i;
 	int counter = 0;
@@ -310,3 +376,91 @@ void DraculaBestMove(DraculaView dv, PlaceId draculaReach[], int len)
 	free(moves);
 }
 
+=======
+
+	PlaceId lastMove, Best, seaMove;
+	lastMove = Best = seaMove = NOWHERE;
+	int i;
+	for(i = 0; i < len; i++) {
+		// If move is Hide or DB go inside
+		if(IsNonRealMove(draculaReach[i])) {
+			// If currently at CD and HI or DB1 available then play
+			if(DvGetPlayerLocation(dv, PLAYER_DRACULA) == CASTLE_DRACULA && IsHideOrDB(draculaReach[i])) {
+				// If HI or DB1 to CD is in Hunter's Reach then avoid
+				if(protectCastleCircle() || InHunterReach(CASTLE_DRACULA)) {
+					continue;
+		        }
+				registerBestPlay(placeIdToAbbrev(draculaReach[i]), "Mwahahahaha");
+				return;
+			}
+			lastMove = draculaReach[i];
+			continue;
+		}
+		// Updates the best position here. Avoids Sea.
+		if(!placeIsSea(draculaReach[i])) {
+			Best = draculaReach[i];
+			if(Best == CASTLE_DRACULA)
+				break;
+		}
+		// Must be a Sea if gets here
+		seaMove = draculaReach[i];
+	}
+	// Play the Best move is possible
+	if(Best != NOWHERE) {
+		registerBestPlay(placeIdToAbbrev(Best), "Mwahahahaha");
+		return;
+	}
+	// Play HI or DB1 if it doesnot leads to hunter
+	if(IsHideOrDB(lastMove)) {
+		if(!InHunterReach(DvGetPlayerLocation(dv, PLAYER_DRACULA))) {
+			registerBestPlay(placeIdToAbbrev(lastMove), "Mwahahahaha");
+			return;
+		}
+	}
+	// Play sea otherwise if have
+	if(seaMove != NOWHERE) {
+		registerBestPlay(placeIdToAbbrev(seaMove), "Mwahahahaha");
+		return;
+	}
+	// Play anymoves otherwise cuz doesn't matter now.
+	
+	registerBestPlay(placeIdToAbbrev(draculaReach[len>1?len-2:len-1]), "Mwahahahaha");
+}
+
+static
+int InHunterReach(PlaceId move)
+{
+	int i;
+	for(i = 0; i < size; i++) {
+		if(huntersLoc[i] == move)
+			return 1;
+	}
+	return 0;
+}
+
+static
+int IsNonRealMove(PlaceId move)
+{
+	return (move >= 102 && move <=107);
+}
+
+static
+int IsHideOrDB(PlaceId move)
+{
+	return (move == 102 || move == 103);
+}
+
+// Gives the len of places reachable by dracula from current location excluding HI and DB moves
+static
+int protectCastleCircle()
+{
+	int i;
+	for(i = 0; i < size; i++) {
+		if(huntersLoc[i] == BUDAPEST || huntersLoc[i] == SZEGED || huntersLoc[i] == BELGRADE || huntersLoc[i] == ZAGREB ||
+				huntersLoc[i] == BUCHAREST || huntersLoc[i] == CONSTANTA || huntersLoc[i] == CONSTANTA)
+			return 1;
+	}
+	
+	return 0;
+}
+>>>>>>> 80a72eb328e5cc7cf2b39d92e11bea5b8a774394
