@@ -16,13 +16,19 @@
 
 void decideHunterMove(HunterView hv)
 {
-	// Hunter walks around in a circle
+    // Hunter walks around in a circle
     // Pending hunterview to be fixed to implement AI
 
     int player = HvGetPlayer(hv);
     int round = HvGetRound(hv);
     PlaceId currentLocation = HvGetPlayerLocation(hv, player);
 
+	
+    // Hunter 1 start pos == Munich (Centre)
+    // Hunter 2 start pos == Saragossa
+    // Hunter 3 start pos == Manchester
+    // Hunter 4 start pos == Castle_Dracula (stay there)
+	
     if (round == 0) {
         registerBestPlay("BD", "None");
         return;
